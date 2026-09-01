@@ -5,8 +5,6 @@ import com.tss.aml.enums.TenantStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.util.List;
 import java.util.UUID;
@@ -47,8 +45,7 @@ public class Tenant extends BaseEntity {
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "status", nullable = false, columnDefinition = "tenant_status_enum")
+    @Column(name = "status", nullable = false, length = 50)
     private TenantStatus status = TenantStatus.ONBOARDING;
 
     @ManyToOne(fetch = FetchType.LAZY)

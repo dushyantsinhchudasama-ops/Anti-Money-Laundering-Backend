@@ -1,10 +1,9 @@
 package com.tss.aml.entities.tenant;
 
+import com.tss.aml.entities.system.Users;
 import com.tss.aml.enums.NoteType;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -33,11 +32,10 @@ public class CaseNote {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
-    private TenantUser author;
+    private Users author;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "note_type", nullable = false, columnDefinition = "note_type_enum")
+    @Column(name = "note_type", nullable = false, length = 50)
     private NoteType noteType;
 
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")

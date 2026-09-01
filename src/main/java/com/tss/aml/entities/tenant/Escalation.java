@@ -1,5 +1,6 @@
 package com.tss.aml.entities.tenant;
 
+import com.tss.aml.entities.system.Users;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,11 +31,11 @@ public class Escalation {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "escalated_by", nullable = false)
-    private TenantUser escalatedBy;
+    private Users escalatedBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recipient_id", nullable = false)
-    private TenantUser recipient;
+    private Users recipient;
 
     @Column(name = "reason", nullable = false, columnDefinition = "TEXT")
     private String reason;

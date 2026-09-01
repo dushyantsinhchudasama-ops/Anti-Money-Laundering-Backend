@@ -7,8 +7,6 @@ import com.tss.aml.enums.RuleTypology;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.util.List;
 import java.util.UUID;
@@ -43,8 +41,7 @@ public class Rule extends BaseEntity {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "typology", nullable = false, columnDefinition = "rule_typology_enum")
+    @Column(name = "typology", nullable = false, length = 50)
     private RuleTypology typology;
 
     /** Rule-specific thresholds/config, e.g. {"windowDays":7,"minCount":5,"amountThreshold":900000} */
@@ -52,14 +49,12 @@ public class Rule extends BaseEntity {
     private String parameters;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "default_severity", nullable = false, columnDefinition = "alert_severity_enum")
+    @Column(name = "default_severity", nullable = false, length = 50)
     private AlertSeverity defaultSeverity;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "status", nullable = false, columnDefinition = "rule_status_enum")
+    @Column(name = "status", nullable = false, length = 50)
     private RuleStatus status = RuleStatus.DRAFT;
 
     @OneToMany(mappedBy = "rule", cascade = CascadeType.ALL, orphanRemoval = true)

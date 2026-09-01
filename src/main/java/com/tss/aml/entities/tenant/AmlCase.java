@@ -1,12 +1,11 @@
 package com.tss.aml.entities.tenant;
 
 import com.tss.aml.entities.common.BaseEntity;
+import com.tss.aml.entities.system.Users;
 import com.tss.aml.enums.CaseStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,16 +38,15 @@ public class AmlCase extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
-    private TenantUser createdBy;
+    private Users createdBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_to")
-    private TenantUser assignedTo;
+    private Users assignedTo;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "status", nullable = false, columnDefinition = "case_status_enum")
+    @Column(name = "status", nullable = false, length = 50)
     private CaseStatus status = CaseStatus.OPEN;
 
     // Mandatory rationale on closure (SRS 3.3.7)

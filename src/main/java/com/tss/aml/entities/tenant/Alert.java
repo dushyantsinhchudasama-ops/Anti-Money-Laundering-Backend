@@ -7,8 +7,6 @@ import com.tss.aml.enums.AlertStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.util.UUID;
 
@@ -42,14 +40,12 @@ public class Alert extends BaseEntity {
     private Rule rule;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "severity", nullable = false, columnDefinition = "alert_severity_enum")
+    @Column(name = "severity", nullable = false, length = 50)
     private AlertSeverity severity;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "alert_status", nullable = false, columnDefinition = "alert_status_enum")
+    @Column(name = "alert_status", nullable = false, length = 50)
     private AlertStatus alertStatus = AlertStatus.OPEN;
 
     @ManyToOne(fetch = FetchType.LAZY)

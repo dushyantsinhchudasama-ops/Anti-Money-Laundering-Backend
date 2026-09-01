@@ -6,8 +6,6 @@ import com.tss.aml.enums.RiskRating;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,8 +40,7 @@ public class Account extends BaseEntity {
     private String accountHolderName;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "account_type", nullable = false, columnDefinition = "account_type_enum")
+    @Column(name = "account_type", nullable = false, length = 50)
     private AccountType accountType;
 
     @Column(name = "bank_name", length = 200)
@@ -54,8 +51,7 @@ public class Account extends BaseEntity {
 
     // Customer Risk Rating (SRS 3.3.3)
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "risk_rating", columnDefinition = "risk_rating_enum")
+    @Column(name = "risk_rating", length = 50)
     private RiskRating riskRating;
 
     @Column(name = "opened_at")

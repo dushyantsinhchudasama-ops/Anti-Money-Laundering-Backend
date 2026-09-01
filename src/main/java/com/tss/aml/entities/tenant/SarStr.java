@@ -1,6 +1,7 @@
 package com.tss.aml.entities.tenant;
 
 import com.tss.aml.entities.common.BaseEntity;
+import com.tss.aml.entities.system.Users;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -51,7 +52,7 @@ public class SarStr extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "filed_by")
-    private TenantUser filedBy;
+    private Users filedBy;
 
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt;

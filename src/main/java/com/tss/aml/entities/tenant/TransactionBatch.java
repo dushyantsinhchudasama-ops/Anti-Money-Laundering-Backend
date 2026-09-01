@@ -1,10 +1,9 @@
 package com.tss.aml.entities.tenant;
 
+import com.tss.aml.entities.system.Users;
 import com.tss.aml.enums.BatchStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,15 +32,14 @@ public class TransactionBatch {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uploaded_by", nullable = false)
-    private TenantUser uploadedBy;
+    private Users uploadedBy;
 
     @Column(name = "file_reference", nullable = false)
     private String fileReference;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "status", nullable = false, columnDefinition = "batch_status_enum")
+    @Column(name = "status", nullable = false, length = 50)
     private BatchStatus status = BatchStatus.QUEUED;
 
     @Column(name = "total_records")

@@ -1,38 +1,35 @@
-package com.tss.aml.entities.tenant;
+package com.tss.aml.entities.system;
 
 import com.tss.aml.entities.common.BaseEntity;
 import com.tss.aml.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * A Bank Admin or Compliance Officer within this tenant's schema (SRS 3.2 / 3.3).
- */
 @Data
 @Entity
-@Table(name = "tenant_user")
+@Table(name = "users", schema = "public")
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class TenantUser extends BaseEntity {
+public class Users extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "user_id")
     private UUID userId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id")
+    private Tenant tenant;
+
     @Column(name = "user_code", nullable = false, length = 20)
     private String userCode;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "role", nullable = false, columnDefinition = "user_role_enum")
+    @Column(name = "role", nullable = false, length = 50)
     private UserRole role;
 
     @Column(name = "employee_id", length = 50)
@@ -57,7 +54,6 @@ public class TenantUser extends BaseEntity {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    // Forced first-login reset (SRS 3.2.1 — "cannot be bypassed")
     @Builder.Default
     @Column(name = "must_reset_password", nullable = false)
     private Boolean mustResetPassword = true;
@@ -65,7 +61,6 @@ public class TenantUser extends BaseEntity {
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
-    // Account lockout (SRS 3.1.1)
     @Builder.Default
     @Column(name = "failed_login_count", nullable = false)
     private Integer failedLoginCount = 0;

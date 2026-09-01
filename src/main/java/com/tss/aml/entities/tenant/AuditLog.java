@@ -1,5 +1,6 @@
 package com.tss.aml.entities.tenant;
 
+import com.tss.aml.entities.system.Users;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,7 +27,7 @@ public class AuditLog {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "actor_id", nullable = false)
-    private TenantUser actor;
+    private Users actor;
 
     @Column(name = "action", nullable = false, length = 100)
     private String action;

@@ -6,8 +6,6 @@ import com.tss.aml.enums.TransactionType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -22,6 +20,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
 public class FinancialTransaction extends BaseEntity {
 
     @Id
@@ -47,13 +47,11 @@ public class FinancialTransaction extends BaseEntity {
     private String currency;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "txn_type", nullable = false, columnDefinition = "txn_type_enum")
+    @Column(name = "txn_type", nullable = false, length = 50)
     private TransactionType txnType;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "direction", nullable = false, columnDefinition = "direction_enum")
+    @Column(name = "direction", nullable = false, length = 50)
     private TransactionDirection direction;
 
     // Beneficiary / counterparty — external party, captured as plain fields (SRS 3.3.3)

@@ -1,11 +1,10 @@
 package com.tss.aml.entities.tenant;
 
+import com.tss.aml.entities.system.Users;
 import com.tss.aml.enums.NotificationChannel;
 import com.tss.aml.enums.NotificationEventType;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -29,16 +28,14 @@ public class Notification {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recipient_id", nullable = false)
-    private TenantUser recipient;
+    private Users recipient;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "event_type", nullable = false, columnDefinition = "notification_event_type_enum")
+    @Column(name = "event_type", nullable = false, length = 50)
     private NotificationEventType eventType;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "channel", nullable = false, columnDefinition = "notification_channel_enum")
+    @Column(name = "channel", nullable = false, length = 50)
     private NotificationChannel channel;
 
     @Column(name = "message", nullable = false, columnDefinition = "TEXT")

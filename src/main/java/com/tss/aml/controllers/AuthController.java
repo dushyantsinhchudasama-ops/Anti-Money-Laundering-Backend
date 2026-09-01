@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,9 +21,12 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request) {
-
-        return ResponseEntity.ok(
-                authService.login(request)
-        );
+        try {
+            return ResponseEntity.ok(
+                    authService.login(request)
+            );
+        } catch (AuthenticationException ex) {
+            return ResponseEntity.status(401).build();
+        }
     }
 }

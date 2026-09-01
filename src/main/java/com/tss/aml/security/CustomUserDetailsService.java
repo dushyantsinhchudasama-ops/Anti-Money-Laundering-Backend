@@ -26,9 +26,27 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String email) {
 
-        Users user = usersRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("Invalid email or password"));
+                String tenantCode = null;
+                String lookupEmail = email;
+
+                // support composite principal: "email||tenantCode"
+                if (email != null && email.contains("||")) {
+                        String[] parts = email.split("\\|\\|");
+                        if (parts.length == 2) {
+                                lookupEmail = parts[0];
+                                tenantCode = parts[1];
+                        }
+                }
+
+                Users user;
+
+                if (tenantCode != null) {
+                        user = usersRepository.findByEmailAndTenant_TenantCode(lookupEmail, tenantCode)
+                                        .orElseThrow(() -> new UsernameNotFoundException("Invalid email or password"));
+                } else {
+                        user = usersRepository.findByEmail(lookupEmail)
+                                        .orElseThrow(() -> new UsernameNotFoundException("Invalid email or password"));
+                }
 
         return CustomUserDetails.builder()
                 .userId(user.getUserId())

@@ -36,11 +36,10 @@ public class JwtAuthenticationFilter
         if (StringUtils.hasText(token)
                 && jwtTokenProvider.validateToken(token)) {
 
-            String userId =
-                    jwtTokenProvider.getUserId(token).toString();
+            String username = jwtTokenProvider.getUsername(token);
 
             UserDetails userDetails =
-                    userDetailsService.loadUserByUsername(userId);
+                    userDetailsService.loadUserByUsername(username);
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(

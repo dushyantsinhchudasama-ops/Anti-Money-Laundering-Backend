@@ -24,10 +24,16 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse login(LoginRequest request) {
 
+        // include tenantCode in the principal so CustomUserDetailsService can scope lookup
+        String principal = request.getEmail();
+        if (request.getTenantCode() != null && !request.getTenantCode().isBlank()) {
+            principal = request.getEmail() + "||" + request.getTenantCode();
+        }
+
         Authentication authentication =
                 authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(
-                                request.getEmail(),
+                                principal,
                                 request.getPassword()
                         )
                 );

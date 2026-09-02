@@ -50,7 +50,8 @@ public class JwtTokenProvider {
                 .collect(Collectors.toList());
 
         return Jwts.builder()
-                .subject(user.getUserId().toString())
+                // store username (email) as subject so UserDetailsService can load by username
+                .subject(user.getUsername())
 
                 .claim("roles", roles)
 
@@ -63,6 +64,9 @@ public class JwtTokenProvider {
                         "tenantCode",
                         user.getTenantCode()
                 )
+
+                // include userId as a claim to allow retrieving UUIDs later
+                .claim("userId", user.getUserId().toString())
 
                 .claim(
                         "jti",
@@ -91,11 +95,13 @@ public class JwtTokenProvider {
     }
 
     public UUID getUserId(String token) {
-
-        return UUID.fromString(
-                getClaims(token).getSubject()
-        );
+                String id = getClaims(token).get("userId", String.class);
+                return UUID.fromString(id);
     }
+
+        public String getUsername(String token) {
+                return getClaims(token).getSubject();
+        }
 
     public String getTenantCode(String token) {
 

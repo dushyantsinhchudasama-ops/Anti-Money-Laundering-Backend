@@ -57,7 +57,7 @@ public class JwtTokenProvider {
 
                 .claim(
                         "tenantId",
-                        user.getTenantId().toString()
+                        user.getTenantId() != null ? user.getTenantId().toString() : null
                 )
 
                 .claim(
@@ -111,11 +111,10 @@ public class JwtTokenProvider {
 
     public UUID getTenantId(String token) {
 
-        return UUID.fromString(
-                getClaims(token)
-                        .get("tenantId", String.class)
-        );
+        String tenantIdStr = getClaims(token).get("tenantId", String.class);
+        return tenantIdStr != null ? UUID.fromString(tenantIdStr) : null;
     }
+
 
     public boolean validateToken(String token) {
 

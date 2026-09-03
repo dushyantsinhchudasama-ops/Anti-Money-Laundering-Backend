@@ -3,11 +3,10 @@ package com.tss.aml.services.implementation;
 
 import com.tss.aml.dtos.auth.LoginRequest;
 import com.tss.aml.dtos.auth.LoginResponse;
-import com.tss.aml.services.AuthService;
+import com.tss.aml.services.interfaces.AuthService;
 import com.tss.aml.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;

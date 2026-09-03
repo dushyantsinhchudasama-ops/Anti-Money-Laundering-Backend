@@ -27,6 +27,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final TenantService tenantService;
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return "/auth/login".equals(request.getServletPath());
+    }
+
+    @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
@@ -40,9 +45,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (token != null && jwtTokenProvider.validateToken(token)) {
 
                 UUID tenantId = jwtTokenProvider.getTenantId(token);
-                String schemaName = tenantService.getSchemaName(tenantId);
 
-                TenantContext.setCurrentTenant(schemaName);
+                if (tenantId != null) {
+                    String schemaName = tenantService.getSchemaName(tenantId);
+                    TenantContext.setCurrentTenant(schemaName);
+                    log.debug(
+                            "Authenticated request for tenant schema: {}",
+                            schemaName
+                    );
+                }
 
                 UserDetails userDetails =
                         userDetailsService.loadUserByUsername(
@@ -59,11 +70,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder
                         .getContext()
                         .setAuthentication(authentication);
-
-                log.debug(
-                        "Authenticated request for tenant schema: {}",
-                        schemaName
-                );
             }
 
             filterChain.doFilter(request, response);
@@ -75,6 +81,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.clearContext();
         }
     }
+
 
     private String resolveToken(HttpServletRequest request) {
 

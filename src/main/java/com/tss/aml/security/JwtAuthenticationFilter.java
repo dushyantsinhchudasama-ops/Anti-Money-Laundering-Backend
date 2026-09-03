@@ -1,70 +1,95 @@
 package com.tss.aml.security;
 
+import com.tss.aml.tenant.TenantContext;
+import com.tss.aml.tenant.TenantService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import lombok.RequiredArgsConstructor;
-
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class JwtAuthenticationFilter
-        extends OncePerRequestFilter {
+@Slf4j
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
+    private final TenantService tenantService;
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return "/auth/login".equals(request.getServletPath());
+    }
 
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain filterChain)
-            throws ServletException, IOException {
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
-        String token = getToken(request);
+        try {
 
-        if (StringUtils.hasText(token)
-                && jwtTokenProvider.validateToken(token)) {
+            String token = resolveToken(request);
 
-            String username = jwtTokenProvider.getUsername(token);
+            if (token != null && jwtTokenProvider.validateToken(token)) {
 
-            UserDetails userDetails =
-                    userDetailsService.loadUserByUsername(username);
+                UUID tenantId = jwtTokenProvider.getTenantId(token);
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
+                if (tenantId != null) {
+                    String schemaName = tenantService.getSchemaName(tenantId);
+                    TenantContext.setCurrentTenant(schemaName);
+                    log.debug(
+                            "Authenticated request for tenant schema: {}",
+                            schemaName
                     );
+                }
 
-            SecurityContextHolder
-                    .getContext()
-                    .setAuthentication(authentication);
+                UserDetails userDetails =
+                        userDetailsService.loadUserByUsername(
+                                jwtTokenProvider.getUsername(token)
+                        );
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+
+                SecurityContextHolder
+                        .getContext()
+                        .setAuthentication(authentication);
+            }
+
+            filterChain.doFilter(request, response);
+
+        } finally {
+
+            TenantContext.clear();
+
+            SecurityContextHolder.clearContext();
         }
-
-        filterChain.doFilter(request, response);
     }
 
-    private String getToken(HttpServletRequest request) {
 
-        String header =
-                request.getHeader("Authorization");
+    private String resolveToken(HttpServletRequest request) {
 
-        if (StringUtils.hasText(header)
-                && header.startsWith("Bearer ")) {
+        String bearerToken = request.getHeader("Authorization");
 
-            return header.substring(7);
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+
+            return bearerToken.substring(7);
         }
 
         return null;

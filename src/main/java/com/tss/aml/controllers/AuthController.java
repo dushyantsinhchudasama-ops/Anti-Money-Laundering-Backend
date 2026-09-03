@@ -2,7 +2,7 @@ package com.tss.aml.controllers;
 
 import com.tss.aml.dtos.auth.LoginRequest;
 import com.tss.aml.dtos.auth.LoginResponse;
-import com.tss.aml.services.AuthService;
+import com.tss.aml.services.interfaces.AuthService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

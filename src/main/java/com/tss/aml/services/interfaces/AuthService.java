@@ -1,4 +1,4 @@
-package com.tss.aml.services;
+package com.tss.aml.services.interfaces;
 
 
 import com.tss.aml.dtos.auth.LoginRequest;

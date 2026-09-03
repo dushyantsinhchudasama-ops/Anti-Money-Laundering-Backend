@@ -38,9 +38,14 @@ public class SecurityConfig {
                                 "/auth/login"
                         ).permitAll()
 
+                        .requestMatchers(
+                                "/api/v1/admin/**"
+                        ).hasAuthority("ROLE_SYSTEM_ADMIN")
+
                         .anyRequest()
                         .authenticated()
                 )
+
 
                 .addFilterBefore(
                         jwtAuthenticationFilter,

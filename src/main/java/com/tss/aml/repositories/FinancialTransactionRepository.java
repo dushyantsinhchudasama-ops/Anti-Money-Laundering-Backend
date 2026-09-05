@@ -2,6 +2,7 @@ package com.tss.aml.repositories;
 
 import com.tss.aml.entities.tenant.Account;
 import com.tss.aml.entities.tenant.FinancialTransaction;
+import com.tss.aml.enums.TransactionDirection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -56,7 +57,7 @@ public interface FinancialTransactionRepository extends JpaRepository<FinancialT
     )
     BigDecimal sumAmountByDirectionInWindow(
             @Param("account") Account account,
-            @Param("direction") com.tss.aml.enums.TransactionDirection direction,
+            @Param("direction") TransactionDirection direction,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );

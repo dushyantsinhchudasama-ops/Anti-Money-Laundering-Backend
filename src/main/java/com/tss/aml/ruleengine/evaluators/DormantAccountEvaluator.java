@@ -46,6 +46,6 @@ public class DormantAccountEvaluator implements AmlRuleEvaluator {
 
     @Override
     public RuleTypology getSupportedTypology() {
-        return RuleTypology.DORMANT_ACCOUNT_REACTIVATION;
+        return RuleTypology.DORMANT_ACCOUNT;
     }
 }

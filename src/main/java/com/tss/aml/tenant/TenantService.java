@@ -36,6 +36,7 @@ public class TenantService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TenantMigrationService tenantMigrationService;
+    private final com.tss.aml.services.EmailService emailService;
 
 
     public CreateTenantResponse onboardTenant(CreateTenantRequest request) {
@@ -200,6 +201,14 @@ public class TenantService {
         log.info("Created Bank Admin user '{}' (ID: {}) for tenant '{}' (ID: {}) by SystemAdmin '{}'",
                 user.getEmail(), user.getUserId(), tenant.getTenantCode(), tenant.getTenantId(), admin.getEmail());
 
+        emailService.sendBankAdminWelcomeEmail(
+                user.getEmail(),
+                user.getFirstName(),
+                tenant.getTenantName(),
+                tenant.getTenantCode(),
+                temporaryPassword
+        );
+
         return CreateBankAdminResponse.builder()
                 .userId(user.getUserId())
                 .userCode(user.getUserCode())
@@ -212,7 +221,6 @@ public class TenantService {
                 .role(user.getRole())
                 .isActive(user.getIsActive())
                 .mustResetPassword(user.getMustResetPassword())
-                .temporaryPassword(temporaryPassword)
                 .createdAt(user.getCreatedAt())
                 .build();
     }

@@ -22,6 +22,7 @@ public class CustomUserDetails implements UserDetails {
 
     private final boolean enabled;
     private final boolean accountNonLocked;
+    private final boolean mustResetPassword;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

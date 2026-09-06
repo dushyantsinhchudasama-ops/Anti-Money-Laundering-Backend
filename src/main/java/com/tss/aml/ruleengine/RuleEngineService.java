@@ -3,6 +3,7 @@ package com.tss.aml.ruleengine;
 import com.tss.aml.entities.system.Rule;
 import com.tss.aml.entities.tenant.Alert;
 import com.tss.aml.entities.tenant.FinancialTransaction;
+import com.tss.aml.enums.AlertSeverity;
 import com.tss.aml.enums.AlertStatus;
 import com.tss.aml.enums.RuleTypology;
 import com.tss.aml.repositories.AlertRepository;
@@ -57,7 +58,7 @@ public class RuleEngineService {
                     .alertCode("ALT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                     .transaction(txn)
                     .rule(rule)
-                    .severity(rule.getDefaultSeverity())
+                    .severity(AlertSeverity.valueOf(rule.getDefaultSeverity().name()))
                     .alertStatus(AlertStatus.OPEN)
                     .build();
         }

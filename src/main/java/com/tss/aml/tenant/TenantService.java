@@ -1,32 +1,30 @@
 package com.tss.aml.tenant;
 
+import com.tss.aml.dtos.tenant.CreateBankAdminRequest;
+import com.tss.aml.dtos.tenant.CreateBankAdminResponse;
 import com.tss.aml.dtos.tenant.CreateTenantRequest;
 import com.tss.aml.dtos.tenant.CreateTenantResponse;
 import com.tss.aml.entities.system.SystemAdmin;
 import com.tss.aml.entities.system.Tenant;
+import com.tss.aml.entities.system.Users;
 import com.tss.aml.enums.TenantStatus;
+import com.tss.aml.enums.UserRole;
 import com.tss.aml.repositories.SystemAdminRepository;
 import com.tss.aml.repositories.TenantRepository;
+import com.tss.aml.repositories.UserRepository;
+import com.tss.aml.security.CustomUserDetails;
 import com.tss.aml.services.TenantMigrationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import com.tss.aml.security.CustomUserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
-
-import com.tss.aml.dtos.tenant.CreateBankAdminRequest;
-import com.tss.aml.dtos.tenant.CreateBankAdminResponse;
-import com.tss.aml.entities.system.Users;
-import com.tss.aml.enums.UserRole;
-import com.tss.aml.repositories.UserRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 @RequiredArgsConstructor

@@ -20,7 +20,7 @@ public class PepEvaluator implements AmlRuleEvaluator {
     private final RuleParameterParser parser;
 
     @Override
-    public boolean evaluate(FinancialTransaction financialTransaction, String params) {
+    public boolean evaluate(FinancialTransaction financialTransaction, Object params) {
         try {
             PepConfigDto config = parser.parse(params, PepConfigDto.class);
             BigDecimal threshold = config.getMinAmountThreshold();

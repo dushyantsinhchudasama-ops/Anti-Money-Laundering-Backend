@@ -1,14 +1,18 @@
 package com.tss.aml.entities.system;
 
 import com.tss.aml.entities.common.BaseEntity;
-import com.tss.aml.enums.AlertSeverity;
+import com.tss.aml.enums.RuleSeverity;
 import com.tss.aml.enums.RuleStatus;
 import com.tss.aml.enums.RuleTypology;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -45,12 +49,13 @@ public class Rule extends BaseEntity {
     private RuleTypology typology;
 
     /** Rule-specific thresholds/config, e.g. {"windowDays":7,"minCount":5,"amountThreshold":900000} */
-    @Column(name = "parameters", columnDefinition = "TEXT")
-    private String parameters;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "parameters", columnDefinition = "jsonb", nullable = false)
+    private Map<String, Object> parameters;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "default_severity", nullable = false, length = 50)
-    private AlertSeverity defaultSeverity;
+    private RuleSeverity defaultSeverity;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

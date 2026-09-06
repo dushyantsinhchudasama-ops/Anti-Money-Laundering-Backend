@@ -3,7 +3,7 @@ package com.tss.aml.controllers;
 import com.tss.aml.dtos.batch.BatchUploadResponseDto;
 import com.tss.aml.enums.BatchStatus;
 import com.tss.aml.security.CustomUserDetails;
-import com.tss.aml.services.BatchIngestionService;
+import com.tss.aml.services.interfaces.BatchIngestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

@@ -28,7 +28,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return "/auth/login".equals(request.getServletPath());
+        String path = request.getServletPath();
+        return path != null && path.startsWith("/auth/");
     }
 
     @Override
@@ -59,6 +60,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         userDetailsService.loadUserByUsername(
                                 jwtTokenProvider.getUsername(token)
                         );
+
+                if (userDetails instanceof CustomUserDetails customUser && customUser.isMustResetPassword()) {
+                    String path = request.getServletPath();
+                    if (path == null || !path.startsWith("/auth/")) {
+                        response.setStatus(428); // 428 Precondition Required
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"status\":428,\"error\":\"Precondition Required\",\"message\":\"Mandatory password reset required before accessing system resources.\"}");
+                        return;
+                    }
+                }
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(

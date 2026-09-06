@@ -24,7 +24,7 @@ public class RapidPassThroughEvaluator implements AmlRuleEvaluator {
     private final FinancialTransactionRepository transactionRepository;
 
     @Override
-    public boolean evaluate(FinancialTransaction financialTransaction, String params) {
+    public boolean evaluate(FinancialTransaction financialTransaction, Object params) {
         try {
             RapidPassThroughConfigDto config = parser.parse(params, RapidPassThroughConfigDto.class);
             LocalDateTime endDate = financialTransaction.getTxnTimestamp();

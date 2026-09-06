@@ -22,7 +22,7 @@ public class StructuringEvaluator implements AmlRuleEvaluator {
     private final FinancialTransactionRepository transactionRepository;
 
     @Override
-    public boolean evaluate(FinancialTransaction financialTransaction, String params) {
+    public boolean evaluate(FinancialTransaction financialTransaction, Object params) {
         try {
             StructuringConfigDto config = parser.parse(params, StructuringConfigDto.class);
             BigDecimal threshold = config.getReportingThreshold();

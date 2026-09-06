@@ -19,7 +19,7 @@ public class RoundAmountEvaluator implements AmlRuleEvaluator {
     private final RuleParameterParser parser;
 
     @Override
-    public boolean evaluate(FinancialTransaction financialTransaction, String params) {
+    public boolean evaluate(FinancialTransaction financialTransaction, Object params) {
         try{
             RoundAmountConfigDto roundAmountConfig = parser.parse(params, RoundAmountConfigDto.class);
             BigDecimal threshold = roundAmountConfig.getModuloThreshold();

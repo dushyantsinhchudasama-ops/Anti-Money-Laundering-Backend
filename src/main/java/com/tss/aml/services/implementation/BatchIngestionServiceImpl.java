@@ -1,4 +1,4 @@
-package com.tss.aml.services;
+package com.tss.aml.services.implementation;
 
 import com.tss.aml.dtos.batch.BatchUploadResponseDto;
 import com.tss.aml.dtos.batch.BatchValidationErrorDto;
@@ -6,21 +6,14 @@ import com.tss.aml.dtos.batch.BatchValidationResult;
 import com.tss.aml.dtos.batch.ParsedTransactionRowDto;
 import com.tss.aml.entities.system.Rule;
 import com.tss.aml.entities.system.Users;
-import com.tss.aml.entities.tenant.Account;
-import com.tss.aml.entities.tenant.Alert;
-import com.tss.aml.entities.tenant.BatchValidationError;
-import com.tss.aml.entities.tenant.FinancialTransaction;
-import com.tss.aml.entities.tenant.TransactionBatch;
+import com.tss.aml.entities.tenant.*;
 import com.tss.aml.enums.BatchStatus;
 import com.tss.aml.enums.RuleStatus;
-import com.tss.aml.repositories.AccountRepository;
-import com.tss.aml.repositories.BatchValidationErrorRepository;
-import com.tss.aml.repositories.FinancialTransactionRepository;
-import com.tss.aml.repositories.RuleRepository;
-import com.tss.aml.repositories.TransactionBatchRepository;
-import com.tss.aml.repositories.UserRepository;
+import com.tss.aml.repositories.*;
 import com.tss.aml.ruleengine.RuleEngineService;
 import com.tss.aml.security.CustomUserDetails;
+import com.tss.aml.services.BatchValidationService;
+import com.tss.aml.services.interfaces.BatchIngestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -29,11 +22,14 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class BatchIngestionService {
+public class BatchIngestionServiceImpl implements BatchIngestionService {
 
     private final BatchValidationService validationService;
     private final TransactionBatchRepository batchRepository;
@@ -45,6 +41,7 @@ public class BatchIngestionService {
     private final RuleEngineService ruleEngineService;
 
     @Transactional
+    @Override
     public BatchUploadResponseDto processBatchUpload(MultipartFile file, CustomUserDetails currentUser) {
         if (currentUser == null || currentUser.getUserId() == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User authentication principal missing");
@@ -53,6 +50,13 @@ public class BatchIngestionService {
         Users uploadingUser = userRepository.findById(currentUser.getUserId())
                 .orElseGet(() -> userRepository.findByEmail(currentUser.getUsername())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found: " + currentUser.getUsername())));
+
+        return processBatchUpload(file, uploadingUser);
+    }
+
+    @Transactional
+    @Override
+    public BatchUploadResponseDto processBatchUpload(MultipartFile file, Users uploadingUser) {
 
 
         String fileName = file != null ? file.getOriginalFilename() : "unknown.xlsx";
@@ -171,6 +175,7 @@ public class BatchIngestionService {
     }
 
     @Transactional(readOnly = true)
+    @Override
     public BatchUploadResponseDto getBatchDetails(UUID batchId, CustomUserDetails currentUser) {
         TransactionBatch batch = batchRepository.findById(batchId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Batch not found with ID: " + batchId));

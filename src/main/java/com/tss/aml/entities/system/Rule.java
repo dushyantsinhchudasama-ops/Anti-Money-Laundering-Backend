@@ -8,6 +8,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -46,6 +49,7 @@ public class Rule extends BaseEntity {
     private RuleTypology typology;
 
     /** Rule-specific thresholds/config, e.g. {"windowDays":7,"minCount":5,"amountThreshold":900000} */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "parameters", columnDefinition = "jsonb", nullable = false)
     private Map<String, Object> parameters;
 

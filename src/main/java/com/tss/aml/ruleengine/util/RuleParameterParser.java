@@ -9,10 +9,14 @@ import tools.jackson.databind.ObjectMapper;
 public class RuleParameterParser {
     private final ObjectMapper objectMapper;
 
-    public <T> T parse(String params, Class<T> type){
+    public <T> T parse(Object params, Class<T> type) {
         try {
-            return objectMapper.readValue(params, type);
-        }catch (Exception e) {
+            if (params == null) return null;
+            if (params instanceof String s) {
+                return objectMapper.readValue(s, type);
+            }
+            return objectMapper.convertValue(params, type);
+        } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
     }

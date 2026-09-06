@@ -1,5 +1,7 @@
 package com.tss.aml.controllers;
 
+import com.tss.aml.dtos.tenant.CreateBankAdminRequest;
+import com.tss.aml.dtos.tenant.CreateBankAdminResponse;
 import com.tss.aml.dtos.tenant.CreateTenantRequest;
 import com.tss.aml.dtos.tenant.CreateTenantResponse;
 import com.tss.aml.tenant.TenantService;
@@ -7,16 +9,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-
-import com.tss.aml.dtos.tenant.CreateBankAdminRequest;
-import com.tss.aml.dtos.tenant.CreateBankAdminResponse;
-import org.springframework.web.bind.annotation.PathVariable;
 import java.util.UUID;
 
 @RestController

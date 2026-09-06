@@ -22,7 +22,7 @@ public class DormantAccountEvaluator implements AmlRuleEvaluator {
     private final FinancialTransactionRepository transactionRepository;
 
     @Override
-    public boolean evaluate(FinancialTransaction financialTransaction, String params) {
+    public boolean evaluate(FinancialTransaction financialTransaction, Object params) {
         try {
             DormantAccountConfigDto config = parser.parse(params, DormantAccountConfigDto.class);
             BigDecimal threshold = config.getMinAmountThreshold();

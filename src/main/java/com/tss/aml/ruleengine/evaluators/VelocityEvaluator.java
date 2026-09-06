@@ -21,7 +21,7 @@ public class VelocityEvaluator implements AmlRuleEvaluator {
     private final FinancialTransactionRepository transactionRepository;
 
     @Override
-    public boolean evaluate(FinancialTransaction financialTransaction, String params) {
+    public boolean evaluate(FinancialTransaction financialTransaction, Object params) {
         try {
             VelocityConfigDto config = parser.parse(params, VelocityConfigDto.class);
             LocalDateTime endDate = financialTransaction.getTxnTimestamp();

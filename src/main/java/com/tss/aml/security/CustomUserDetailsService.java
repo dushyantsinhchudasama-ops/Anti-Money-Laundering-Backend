@@ -74,6 +74,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                         user.getLockedUntil() == null ||
                                 user.getLockedUntil().isBefore(LocalDateTime.now())
                 )
+                .mustResetPassword(Boolean.TRUE.equals(user.getMustResetPassword()))
                 .build();
     }
 
@@ -92,6 +93,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                         admin.getLockedUntil() == null ||
                                 admin.getLockedUntil().isBefore(LocalDateTime.now())
                 )
+                .mustResetPassword(false)
                 .build();
     }
 }

@@ -17,7 +17,7 @@ public class GeographicRiskRuleEvaluator implements AmlRuleEvaluator {
     private final RuleParameterParser parser;
 
     @Override
-    public boolean evaluate(FinancialTransaction financialTransaction, String params) {
+    public boolean evaluate(FinancialTransaction financialTransaction, Object params) {
         try {
             GeographicRiskConfigDto config = parser.parse(params, GeographicRiskConfigDto.class);
             if (config == null || config.getHighRiskCountries() == null) {

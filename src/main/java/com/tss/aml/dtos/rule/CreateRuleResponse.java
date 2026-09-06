@@ -3,15 +3,17 @@ package com.tss.aml.dtos.rule;
 import com.tss.aml.enums.RuleSeverity;
 import com.tss.aml.enums.RuleStatus;
 import com.tss.aml.enums.RuleTypology;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import java.util.Map;
 import java.util.UUID;
 
 @Data
-@RequiredArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class CreateRuleResponse {
     private UUID ruleId;

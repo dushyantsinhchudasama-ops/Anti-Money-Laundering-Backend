@@ -3,7 +3,10 @@ package com.tss.aml.entities.tenant;
 import com.tss.aml.entities.common.BaseEntity;
 import com.tss.aml.entities.system.Users;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;

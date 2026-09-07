@@ -15,28 +15,39 @@ import com.tss.aml.repositories.TenantRepository;
 import com.tss.aml.repositories.UserRepository;
 import com.tss.aml.security.CustomUserDetailsService;
 import com.tss.aml.security.JwtTokenProvider;
+import com.tss.aml.services.EmailService;
 import com.tss.aml.tenant.TenantContext;
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -71,6 +82,12 @@ class BankAdminCreationIntegrationTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @MockitoBean
+    private JavaMailSender mailSender;
+
+    @MockitoSpyBean
+    private EmailService emailService;
+
     private SystemAdmin systemAdmin;
     private String systemAdminToken;
 
@@ -82,6 +99,11 @@ class BankAdminCreationIntegrationTest {
 
         TenantContext.clear();
         SecurityContextHolder.clearContext();
+        userRepository.deleteAll();
+
+        when(mailSender.createMimeMessage()).thenAnswer(invocation ->
+                new MimeMessage(Session.getInstance(new Properties()))
+        );
 
         if (systemAdminRepository.count() == 0) {
             initializer.run(null);
@@ -97,18 +119,19 @@ class BankAdminCreationIntegrationTest {
 
     private Tenant createTestTenant(String code, String name, String schema, TenantStatus status) {
         return tenantRepository.findByTenantCode(code)
-                .orElseGet(() -> tenantRepository.save(Tenant.builder()
-                        .tenantCode(code)
-                        .tenantName(name)
-                        .displayName(name)
-                        .schemaName(schema)
-                        .status(status)
-                        .onboardedByAdmin(systemAdmin)
-                        .build()));
+                .orElseGet(() -> tenantRepository.findBySchemaName(schema)
+                        .orElseGet(() -> tenantRepository.save(Tenant.builder()
+                                .tenantCode(code)
+                                .tenantName(name)
+                                .displayName(name)
+                                .schemaName(schema)
+                                .status(status)
+                                .onboardedByAdmin(systemAdmin)
+                                .build())));
     }
 
     @Test
-    @DisplayName("A, B, H, I. SystemAdmin can create HDFC Bank Admin and DB row is correctly configured")
+    @DisplayName("SystemAdmin can create HDFC Bank Admin: DB row is valid, temporary password omitted from API response, and email sent")
     void createHdfcBankAdminSuccess() throws Exception {
         Tenant hdfcTenant = createTestTenant("HDFC", "HDFC Bank", "tenant_hdfc", TenantStatus.ACTIVE);
 
@@ -136,10 +159,11 @@ class BankAdminCreationIntegrationTest {
         assertThat(response.get("role").asText()).isEqualTo("BANK_ADMIN");
         assertThat(response.get("isActive").asBoolean()).isTrue();
         assertThat(response.get("mustResetPassword").asBoolean()).isTrue();
-        String tempPassword = response.get("temporaryPassword").asText();
-        assertThat(tempPassword).isNotNull().startsWith("TmpAdmin@");
 
-        // B. Verify database row in public.users
+        // Verify temporaryPassword is NOT returned in API JSON response
+        assertThat(response.has("temporaryPassword")).isFalse();
+
+        // Verify database row in public.users
         UUID createdUserId = UUID.fromString(response.get("userId").asText());
         Users userInDb = userRepository.findById(createdUserId).orElseThrow();
         assertThat(userInDb.getTenant().getTenantId()).isEqualTo(hdfcTenant.getTenantId());
@@ -148,14 +172,30 @@ class BankAdminCreationIntegrationTest {
         assertThat(userInDb.getIsActive()).isTrue();
         assertThat(userInDb.getMustResetPassword()).isTrue();
 
-        // H. BCrypt hashed password check
+        // Verify EmailService was called with correct parameters
+        ArgumentCaptor<String> tempPassCaptor = ArgumentCaptor.forClass(String.class);
+        verify(emailService).sendBankAdminWelcomeEmail(
+                eq("admin@hdfc.com"),
+                eq("HDFC"),
+                eq("HDFC Bank"),
+                eq("hdfc"),
+                tempPassCaptor.capture()
+        );
+
+        String tempPassword = tempPassCaptor.getValue();
+        assertThat(tempPassword).isNotNull().startsWith("TmpAdmin@");
+
+        // Verify BCrypt hashed password check
         assertThat(userInDb.getPasswordHash()).startsWith("$2");
         assertThat(userInDb.getPasswordHash()).isNotEqualTo(tempPassword);
         assertThat(passwordEncoder.matches(tempPassword, userInDb.getPasswordHash())).isTrue();
+
+        // Verify JavaMailSender.send was called
+        verify(mailSender, times(1)).send(any(MimeMessage.class));
     }
 
     @Test
-    @DisplayName("C. SystemAdmin can create ICICI Bank Admin with distinct tenant_id")
+    @DisplayName("SystemAdmin can create ICICI Bank Admin with distinct tenant_id")
     void createIciciBankAdminSuccess() throws Exception {
         Tenant iciciTenant = createTestTenant("ICICI", "ICICI Bank", "tenant_icici", TenantStatus.ACTIVE);
 
@@ -176,6 +216,7 @@ class BankAdminCreationIntegrationTest {
         JsonNode response = objectMapper.readTree(result.getResponse().getContentAsString());
 
         assertThat(UUID.fromString(response.get("tenantId").asText())).isEqualTo(iciciTenant.getTenantId());
+        assertThat(response.has("temporaryPassword")).isFalse();
 
         UUID createdUserId = UUID.fromString(response.get("userId").asText());
         Users userInDb = userRepository.findById(createdUserId).orElseThrow();
@@ -184,7 +225,7 @@ class BankAdminCreationIntegrationTest {
     }
 
     @Test
-    @DisplayName("D. Non-SystemAdmin cannot create Bank Admin users")
+    @DisplayName("Non-SystemAdmin cannot create Bank Admin users")
     void nonSystemAdminCannotCreateBankAdmin() throws Exception {
         Tenant tenant = createTestTenant("AXIS", "Axis Bank", "tenant_axis", TenantStatus.ACTIVE);
 
@@ -202,7 +243,7 @@ class BankAdminCreationIntegrationTest {
     }
 
     @Test
-    @DisplayName("E. Cannot create a user for a non-existent tenant")
+    @DisplayName("Cannot create a user for a non-existent tenant")
     void nonExistentTenantFails() throws Exception {
         UUID nonExistentId = UUID.randomUUID();
 
@@ -220,7 +261,7 @@ class BankAdminCreationIntegrationTest {
     }
 
     @Test
-    @DisplayName("F. Cannot create a user for an inactive tenant")
+    @DisplayName("Cannot create a user for an inactive tenant")
     void inactiveTenantFails() throws Exception {
         Tenant inactiveTenant = createTestTenant("INACTIVE", "Inactive Bank", "tenant_inactive", TenantStatus.ONBOARDING);
 
@@ -238,7 +279,7 @@ class BankAdminCreationIntegrationTest {
     }
 
     @Test
-    @DisplayName("G. Duplicate email/userCode is rejected")
+    @DisplayName("Duplicate email/userCode is rejected")
     void duplicateEmailOrUserCodeRejected() throws Exception {
         Tenant tenant = createTestTenant("KOTAK", "Kotak Bank", "tenant_kotak", TenantStatus.ACTIVE);
 
@@ -282,7 +323,7 @@ class BankAdminCreationIntegrationTest {
     }
 
     @Test
-    @DisplayName("Requirement 9. Created Bank Admin can authenticate with temporary password and receive tenant-scoped JWT")
+    @DisplayName("Created Bank Admin can authenticate with emailed temporary password and receive tenant-scoped JWT")
     void bankAdminCanAuthenticateWithTemporaryPassword() throws Exception {
         Tenant sbiTenant = createTestTenant("SBI", "State Bank of India", "tenant_sbi", TenantStatus.ACTIVE);
 
@@ -292,19 +333,25 @@ class BankAdminCreationIntegrationTest {
         request.setLastName("Admin");
         request.setEmail("admin@sbi.com");
 
-        MvcResult createResult = mockMvc.perform(post("/api/v1/admin/tenants/" + sbiTenant.getTenantId() + "/users")
+        mockMvc.perform(post("/api/v1/admin/tenants/" + sbiTenant.getTenantId() + "/users")
                         .header("Authorization", "Bearer " + systemAdminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andReturn();
+                .andExpect(status().isCreated());
 
-        JsonNode createResponse = objectMapper.readTree(createResult.getResponse().getContentAsString());
+        ArgumentCaptor<String> tempPassCaptor = ArgumentCaptor.forClass(String.class);
+        verify(emailService).sendBankAdminWelcomeEmail(
+                eq("admin@sbi.com"),
+                eq("SBI"),
+                eq("State Bank of India"),
+                eq("sbi"),
+                tempPassCaptor.capture()
+        );
 
-        String tempPassword = createResponse.get("temporaryPassword").asText();
+        String tempPassword = tempPassCaptor.getValue();
         assertThat(tempPassword).isNotNull();
 
-        // Authenticate with generated temporary password
+        // Authenticate with emailed temporary password
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail("admin@sbi.com");
         loginRequest.setPassword(tempPassword);
@@ -323,5 +370,36 @@ class BankAdminCreationIntegrationTest {
         assertThat(jwtTokenProvider.validateToken(token)).isTrue();
         assertThat(jwtTokenProvider.getTenantId(token)).isEqualTo(sbiTenant.getTenantId());
         assertThat(jwtTokenProvider.getUsername(token)).isEqualTo("admin@sbi.com");
+    }
+
+    @Test
+    @DisplayName("SMTP failure does not rollback or corrupt created Bank Admin record")
+    void emailFailureDoesNotCorruptBankAdminCreation() throws Exception {
+        Tenant pnbTenant = createTestTenant("PNB", "Punjab National Bank", "tenant_pnb", TenantStatus.ACTIVE);
+
+        doThrow(new RuntimeException("Simulated SMTP Server Outage"))
+                .when(mailSender).send(any(MimeMessage.class));
+
+        CreateBankAdminRequest request = new CreateBankAdminRequest();
+        request.setUserCode("PNB_ADMIN");
+        request.setFirstName("PNB");
+        request.setLastName("Admin");
+        request.setEmail("admin@pnb.com");
+
+        MvcResult result = mockMvc.perform(post("/api/v1/admin/tenants/" + pnbTenant.getTenantId() + "/users")
+                        .header("Authorization", "Bearer " + systemAdminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        JsonNode response = objectMapper.readTree(result.getResponse().getContentAsString());
+        UUID createdUserId = UUID.fromString(response.get("userId").asText());
+
+        // Verify user was successfully persisted despite SMTP exception
+        Users userInDb = userRepository.findById(createdUserId).orElseThrow();
+        assertThat(userInDb.getEmail()).isEqualTo("admin@pnb.com");
+        assertThat(userInDb.getIsActive()).isTrue();
+        assertThat(userInDb.getMustResetPassword()).isTrue();
     }
 }

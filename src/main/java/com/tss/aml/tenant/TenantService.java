@@ -36,19 +36,21 @@ public class TenantService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TenantMigrationService tenantMigrationService;
+    private final com.tss.aml.services.EmailService emailService;
 
 
     public CreateTenantResponse onboardTenant(CreateTenantRequest request) {
-        if (tenantRepository.existsByTenantCode(request.getTenantCode())) {
+        String normalizedTenantCode = com.tss.aml.util.NormalizationUtils.normalizeTenantCode(request.getTenantCode());
+        if (tenantRepository.existsByTenantCode(normalizedTenantCode)) {
             throw new IllegalArgumentException("Tenant code already exists: " + request.getTenantCode());
         }
 
         SystemAdmin admin = getCurrentAuthenticatedSystemAdmin();
 
-        String schemaName = generateSchemaName(request.getTenantCode());
+        String schemaName = generateSchemaName(normalizedTenantCode);
 
         Tenant tenant = Tenant.builder()
-                .tenantCode(request.getTenantCode())
+                .tenantCode(normalizedTenantCode)
                 .tenantName(request.getTenantName())
                 .displayName(request.getDisplayName())
                 .schemaName(schemaName)
@@ -169,7 +171,8 @@ public class TenantService {
             throw new IllegalStateException("Tenant is not active: " + tenantId);
         }
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail = com.tss.aml.util.NormalizationUtils.normalizeEmail(request.getEmail());
+        if (userRepository.existsByEmail(normalizedEmail)) {
             throw new IllegalArgumentException("Email already exists: " + request.getEmail());
         }
 
@@ -188,7 +191,7 @@ public class TenantService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .phoneNumber(request.getPhoneNumber())
-                .email(request.getEmail())
+                .email(normalizedEmail)
                 .passwordHash(encodedPassword)
                 .isActive(true)
                 .mustResetPassword(true)
@@ -199,6 +202,14 @@ public class TenantService {
 
         log.info("Created Bank Admin user '{}' (ID: {}) for tenant '{}' (ID: {}) by SystemAdmin '{}'",
                 user.getEmail(), user.getUserId(), tenant.getTenantCode(), tenant.getTenantId(), admin.getEmail());
+
+        emailService.sendBankAdminWelcomeEmail(
+                user.getEmail(),
+                user.getFirstName(),
+                tenant.getTenantName(),
+                tenant.getTenantCode(),
+                temporaryPassword
+        );
 
         return CreateBankAdminResponse.builder()
                 .userId(user.getUserId())
@@ -212,7 +223,6 @@ public class TenantService {
                 .role(user.getRole())
                 .isActive(user.getIsActive())
                 .mustResetPassword(user.getMustResetPassword())
-                .temporaryPassword(temporaryPassword)
                 .createdAt(user.getCreatedAt())
                 .build();
     }

@@ -54,4 +54,12 @@ public class SystemAdmin extends BaseEntity {
 
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
+
+    @PrePersist
+    @PreUpdate
+    public void normalizeFields() {
+        if (this.email != null) {
+            this.email = com.tss.aml.util.NormalizationUtils.normalizeEmail(this.email);
+        }
+    }
 }

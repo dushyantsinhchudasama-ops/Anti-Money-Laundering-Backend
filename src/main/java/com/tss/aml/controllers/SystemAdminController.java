@@ -1,17 +1,19 @@
 package com.tss.aml.controllers;
 
+import com.tss.aml.dtos.rule.AssignRuleRequest;
 import com.tss.aml.dtos.rule.CreateRuleRequest;
 import com.tss.aml.dtos.rule.CreateRuleResponse;
+import com.tss.aml.dtos.rule.RuleAssignmentResponse;
 import com.tss.aml.services.interfaces.ISystemAdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
@@ -21,8 +23,37 @@ public class SystemAdminController {
 
     @PostMapping("/rules")
     @PreAuthorize("hasRole('SYSTEM_ADMIN')")
-    public ResponseEntity<CreateRuleResponse> addNewRule(@Valid @RequestBody CreateRuleRequest request){
+    public ResponseEntity<CreateRuleResponse> addNewRule(@Valid @RequestBody CreateRuleRequest request) {
         CreateRuleResponse response = systemAdminService.addNewRule(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/rules/{ruleId}/assign")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    public ResponseEntity<RuleAssignmentResponse> assignRuleToTenant(
+            @PathVariable("ruleId") UUID ruleId,
+            @Valid @RequestBody AssignRuleRequest request
+    ) {
+        RuleAssignmentResponse response = systemAdminService.assignRuleToTenant(ruleId, request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping({"/rules/tenants/{tenantId}", "/tenants/{tenantId}/rules"})
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    public ResponseEntity<List<RuleAssignmentResponse>> getAssignedRulesForTenant(
+            @PathVariable("tenantId") UUID tenantId
+    ) {
+        List<RuleAssignmentResponse> response = systemAdminService.getAssignedRulesForTenant(tenantId);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/rules/{ruleId}/assign/{tenantId}")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    public ResponseEntity<Void> unassignRuleFromTenant(
+            @PathVariable("ruleId") UUID ruleId,
+            @PathVariable("tenantId") UUID tenantId
+    ) {
+        systemAdminService.unassignRuleFromTenant(ruleId, tenantId);
+        return ResponseEntity.noContent().build();
     }
 }

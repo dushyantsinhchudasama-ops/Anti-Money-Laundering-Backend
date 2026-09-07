@@ -29,10 +29,14 @@ class SystemAdminDataInitializerTest {
     private TenantRepository tenantRepository;
 
     @Autowired
+    private com.tss.aml.repositories.UserRepository userRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setUp() {
+        userRepository.deleteAll();
         tenantRepository.deleteAll();
     }
 

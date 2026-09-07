@@ -6,6 +6,7 @@ import org.hibernate.cfg.MultiTenancySettings;
 import org.springframework.boot.hibernate.autoconfigure.HibernatePropertiesCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestClient;
 
 import java.util.Map;
 
@@ -21,5 +22,6 @@ public class HibernateMultitenancyConfig {
                 MultiTenancySettings.MULTI_TENANT_CONNECTION_PROVIDER, tenantConnectionProvider,
                 MultiTenancySettings.MULTI_TENANT_IDENTIFIER_RESOLVER, tenantIdentifierResolver
         ));
+
     }
 }

@@ -31,14 +31,54 @@ class SystemAdminDataInitializerTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private com.tss.aml.repositories.UserRepository userRepository;
+
+    @Autowired
+    private com.tss.aml.repositories.RuleVersionHistoryRepository ruleVersionHistoryRepository;
+
+    @Autowired
+    private com.tss.aml.repositories.RuleRepository ruleRepository;
+
+    @Autowired
+    private com.tss.aml.repositories.AmlCaseRepository amlCaseRepository;
+
+    @Autowired
+    private com.tss.aml.repositories.FinancialTransactionRepository financialTransactionRepository;
+
+    @Autowired
+    private com.tss.aml.repositories.TransactionBatchRepository transactionBatchRepository;
+
+    @Autowired
+    private com.tss.aml.repositories.AlertRepository alertRepository;
+
     @BeforeEach
     void setUp() {
+        tenantRepository.findAll().forEach(t -> {
+            if (t.getSchemaName() != null) {
+                try {
+                    com.tss.aml.tenant.TenantContext.setCurrentTenant(t.getSchemaName());
+                    alertRepository.deleteAll();
+                    amlCaseRepository.deleteAll();
+                    financialTransactionRepository.deleteAll();
+                    transactionBatchRepository.deleteAll();
+                } catch (Exception ignored) {
+                } finally {
+                    com.tss.aml.tenant.TenantContext.clear();
+                }
+            }
+        });
+        ruleVersionHistoryRepository.deleteAll();
+        ruleRepository.deleteAll();
+        userRepository.deleteAll();
         tenantRepository.deleteAll();
     }
 
     @Test
     @DisplayName("Verify default System Admin is created when none exists and password is BCrypt hashed")
     void defaultSystemAdminIsCreatedAndHashed() {
+        ruleVersionHistoryRepository.deleteAll();
+        ruleRepository.deleteAll();
         systemAdminRepository.deleteAll();
         assertThat(systemAdminRepository.count()).isEqualTo(0);
 

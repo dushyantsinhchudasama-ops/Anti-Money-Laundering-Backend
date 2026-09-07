@@ -141,12 +141,6 @@ class TenantIsolationIntegrationTest {
         hdfcReq.setEmail(hdfcEmail);
         tenantService.createBankAdmin(hdfcTenant.getTenantId(), hdfcReq);
 
-        UserDetails hdfcUserDetails = customUserDetailsService.loadUserByUsername(hdfcEmail);
-        Authentication hdfcAuth = new UsernamePasswordAuthenticationToken(
-                hdfcUserDetails, null, hdfcUserDetails.getAuthorities()
-        );
-        hdfcAdminToken = jwtTokenProvider.generateToken(hdfcAuth);
-
         // 4. Ensure ICICI Bank Admin user exists
         String iciciEmail = "admin_iso@icici.com";
         CreateBankAdminRequest iciciReq = new CreateBankAdminRequest();
@@ -155,6 +149,15 @@ class TenantIsolationIntegrationTest {
         iciciReq.setLastName("Admin");
         iciciReq.setEmail(iciciEmail);
         tenantService.createBankAdmin(iciciTenant.getTenantId(), iciciReq);
+
+        userRepository.findByEmail(hdfcEmail).ifPresent(u -> { u.setMustResetPassword(false); userRepository.save(u); });
+        userRepository.findByEmail(iciciEmail).ifPresent(u -> { u.setMustResetPassword(false); userRepository.save(u); });
+
+        UserDetails hdfcUserDetails = customUserDetailsService.loadUserByUsername(hdfcEmail);
+        Authentication hdfcAuth = new UsernamePasswordAuthenticationToken(
+                hdfcUserDetails, null, hdfcUserDetails.getAuthorities()
+        );
+        hdfcAdminToken = jwtTokenProvider.generateToken(hdfcAuth);
 
         UserDetails iciciUserDetails = customUserDetailsService.loadUserByUsername(iciciEmail);
         Authentication iciciAuth = new UsernamePasswordAuthenticationToken(

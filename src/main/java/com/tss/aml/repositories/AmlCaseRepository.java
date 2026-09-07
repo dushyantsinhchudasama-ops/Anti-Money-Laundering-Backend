@@ -2,6 +2,8 @@ package com.tss.aml.repositories;
 
 import com.tss.aml.entities.tenant.AmlCase;
 import com.tss.aml.enums.CaseStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -31,10 +33,10 @@ public interface AmlCaseRepository extends JpaRepository<AmlCase, UUID> {
            "(:status IS NULL OR c.status = :status) AND " +
            "(:assignedToId IS NULL OR c.assignedTo.userId = :assignedToId) " +
            "ORDER BY c.createdAt DESC")
-    org.springframework.data.domain.Page<AmlCase> findCasesWithFilters(
+    Page<AmlCase> findCasesWithFilters(
             @Param("status") CaseStatus status,
             @Param("assignedToId") UUID assignedToId,
-            org.springframework.data.domain.Pageable pageable
+            Pageable pageable
     );
 }
 

@@ -119,14 +119,15 @@ class BankAdminCreationIntegrationTest {
 
     private Tenant createTestTenant(String code, String name, String schema, TenantStatus status) {
         return tenantRepository.findByTenantCode(code)
-                .orElseGet(() -> tenantRepository.save(Tenant.builder()
-                        .tenantCode(code)
-                        .tenantName(name)
-                        .displayName(name)
-                        .schemaName(schema)
-                        .status(status)
-                        .onboardedByAdmin(systemAdmin)
-                        .build()));
+                .orElseGet(() -> tenantRepository.findBySchemaName(schema)
+                        .orElseGet(() -> tenantRepository.save(Tenant.builder()
+                                .tenantCode(code)
+                                .tenantName(name)
+                                .displayName(name)
+                                .schemaName(schema)
+                                .status(status)
+                                .onboardedByAdmin(systemAdmin)
+                                .build())));
     }
 
     @Test
@@ -177,7 +178,7 @@ class BankAdminCreationIntegrationTest {
                 eq("admin@hdfc.com"),
                 eq("HDFC"),
                 eq("HDFC Bank"),
-                eq("HDFC"),
+                eq("hdfc"),
                 tempPassCaptor.capture()
         );
 
@@ -343,7 +344,7 @@ class BankAdminCreationIntegrationTest {
                 eq("admin@sbi.com"),
                 eq("SBI"),
                 eq("State Bank of India"),
-                eq("SBI"),
+                eq("sbi"),
                 tempPassCaptor.capture()
         );
 

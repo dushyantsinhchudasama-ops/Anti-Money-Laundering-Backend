@@ -41,7 +41,8 @@ public class SecurityConfig {
                         ).permitAll()
 
                         .requestMatchers(
-                                "/api/v1/admin/**"
+                                "/api/v1/admin/**",
+                                "/api/v1/system/admin/**"
                         ).hasAuthority("ROLE_SYSTEM_ADMIN")
 
                         .anyRequest()

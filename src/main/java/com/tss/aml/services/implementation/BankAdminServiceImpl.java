@@ -47,7 +47,8 @@ public class BankAdminServiceImpl implements BankAdminService {
             throw new IllegalStateException("Tenant is not active: " + currentUser.getTenantId());
         }
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail = com.tss.aml.util.NormalizationUtils.normalizeEmail(request.getEmail());
+        if (userRepository.existsByEmail(normalizedEmail)) {
             throw new IllegalArgumentException("Email already exists: " + request.getEmail());
         }
 
@@ -138,8 +139,7 @@ public class BankAdminServiceImpl implements BankAdminService {
                 .isActive(user.getIsActive())
                 .mustResetPassword(user.getMustResetPassword())
                 .createdAt(user.getCreatedAt())
-                .build()
-        );
+                .build());
     }
 
     @Override

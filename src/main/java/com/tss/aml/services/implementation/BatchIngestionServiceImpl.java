@@ -7,6 +7,7 @@ import com.tss.aml.dtos.batch.ParsedTransactionRowDto;
 import com.tss.aml.entities.system.Rule;
 import com.tss.aml.entities.system.Users;
 import com.tss.aml.entities.tenant.*;
+import com.tss.aml.enums.AccountType;
 import com.tss.aml.enums.BatchStatus;
 import com.tss.aml.enums.RuleStatus;
 import com.tss.aml.repositories.*;
@@ -50,13 +51,6 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
         Users uploadingUser = userRepository.findById(currentUser.getUserId())
                 .orElseGet(() -> userRepository.findByEmail(currentUser.getUsername())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found: " + currentUser.getUsername())));
-
-        return processBatchUpload(file, uploadingUser);
-    }
-
-    @Transactional
-    @Override
-    public BatchUploadResponseDto processBatchUpload(MultipartFile file, Users uploadingUser) {
 
 
         String fileName = file != null ? file.getOriginalFilename() : "unknown.xlsx";
@@ -119,6 +113,7 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
                     .orElseGet(() -> accountRepository.save(Account.builder()
                             .accountNumber(row.getOriginatorAccountNo())
                             .accountHolderName(row.getOriginatorName())
+                            .accountType(AccountType.WALLET)
                             .countryCode(row.getCountryCode())
                             .build()));
 

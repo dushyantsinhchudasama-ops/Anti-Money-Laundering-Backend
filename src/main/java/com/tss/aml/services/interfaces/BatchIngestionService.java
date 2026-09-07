@@ -12,9 +12,6 @@ public interface BatchIngestionService {
     @Transactional
     BatchUploadResponseDto processBatchUpload(MultipartFile file, CustomUserDetails currentUser);
 
-    @Transactional
-    BatchUploadResponseDto processBatchUpload(MultipartFile file, Users uploadingUser);
-
     @Transactional(readOnly = true)
     BatchUploadResponseDto getBatchDetails(UUID batchId, CustomUserDetails currentUser);
 }

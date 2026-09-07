@@ -56,4 +56,12 @@ public class Tenant extends BaseEntity {
     // do NOT relate this to tenant-schema entities like TransactionBatch/Alert/Case).
     @OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BankRuleAssignment> ruleAssignments;
+
+    @PrePersist
+    @PreUpdate
+    public void normalizeFields() {
+        if (this.tenantCode != null) {
+            this.tenantCode = com.tss.aml.util.NormalizationUtils.normalizeTenantCode(this.tenantCode);
+        }
+    }
 }

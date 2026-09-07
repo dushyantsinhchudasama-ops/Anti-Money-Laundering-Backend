@@ -50,7 +50,7 @@ public class SystemAdminDataInitializer implements ApplicationRunner {
         admin.setFirstName(firstName);
         admin.setLastName(lastName);
         admin.setPhoneNumber(phoneNumber);
-        admin.setEmail(email);
+        admin.setEmail(com.tss.aml.util.NormalizationUtils.normalizeEmail(email));
         admin.setPasswordHash(passwordEncoder.encode(rawPassword));
         admin.setIsActive(true);
         admin.setFailedLoginCount(0);

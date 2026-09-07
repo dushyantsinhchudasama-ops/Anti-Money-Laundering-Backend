@@ -32,11 +32,14 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse login(LoginRequest request) {
 
+        String normalizedEmail = com.tss.aml.util.NormalizationUtils.normalizeEmail(request.getEmail());
+        String normalizedTenantCode = com.tss.aml.util.NormalizationUtils.normalizeTenantCode(request.getTenantCode());
+
         // include tenantCode in the principal so CustomUserDetailsService can scope
         // lookup
-        String principal = request.getEmail();
-        if (request.getTenantCode() != null && !request.getTenantCode().isBlank()) {
-            principal = request.getEmail() + "||" + request.getTenantCode();
+        String principal = normalizedEmail;
+        if (normalizedTenantCode != null && !normalizedTenantCode.isBlank()) {
+            principal = normalizedEmail + "||" + normalizedTenantCode;
         }
 
         Authentication authentication = authenticationManager.authenticate(
@@ -70,12 +73,15 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("New password and confirm password do not match");
         }
 
+        String normalizedEmail = com.tss.aml.util.NormalizationUtils.normalizeEmail(request.getEmail());
+        String normalizedTenantCode = com.tss.aml.util.NormalizationUtils.normalizeTenantCode(request.getTenantCode());
+
         Users user;
-        if (request.getTenantCode() != null && !request.getTenantCode().isBlank()) {
-            user = userRepository.findByEmailAndTenant_TenantCode(request.getEmail(), request.getTenantCode())
+        if (normalizedTenantCode != null && !normalizedTenantCode.isBlank()) {
+            user = userRepository.findByEmailAndTenant_TenantCode(normalizedEmail, normalizedTenantCode)
                     .orElseThrow(() -> new BadCredentialsException("User not found for provided email and tenant"));
         } else {
-            user = userRepository.findByEmail(request.getEmail())
+            user = userRepository.findByEmail(normalizedEmail)
                     .orElseThrow(() -> new BadCredentialsException("User not found for provided email"));
         }
 

@@ -14,7 +14,13 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "bank_rule_assignment", schema = "public")
+@Table(
+        name = "bank_rule_assignment",
+        schema = "public",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uq_bank_rule_assignment", columnNames = {"tenant_id", "rule_id"})
+        }
+)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

@@ -93,7 +93,7 @@ class TenantOnboardingIntegrationTest {
         CreateTenantResponse response = tenantService.onboardTenant(request);
 
         assertThat(response).isNotNull();
-        assertThat(response.getTenantCode()).isEqualTo("AXIS");
+        assertThat(response.getTenantCode()).isEqualTo("axis");
         assertThat(response.getSchemaName()).isEqualTo("tenant_axis");
         assertThat(response.getStatus()).isEqualTo(TenantStatus.ACTIVE);
         assertThat(response.getOnboardedByAdminId()).isEqualTo(testAdmin.getSystemAdminId());

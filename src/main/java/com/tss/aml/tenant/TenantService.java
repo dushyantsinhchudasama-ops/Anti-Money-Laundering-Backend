@@ -40,16 +40,17 @@ public class TenantService {
 
 
     public CreateTenantResponse onboardTenant(CreateTenantRequest request) {
-        if (tenantRepository.existsByTenantCode(request.getTenantCode())) {
+        String normalizedTenantCode = com.tss.aml.util.NormalizationUtils.normalizeTenantCode(request.getTenantCode());
+        if (tenantRepository.existsByTenantCode(normalizedTenantCode)) {
             throw new IllegalArgumentException("Tenant code already exists: " + request.getTenantCode());
         }
 
         SystemAdmin admin = getCurrentAuthenticatedSystemAdmin();
 
-        String schemaName = generateSchemaName(request.getTenantCode());
+        String schemaName = generateSchemaName(normalizedTenantCode);
 
         Tenant tenant = Tenant.builder()
-                .tenantCode(request.getTenantCode())
+                .tenantCode(normalizedTenantCode)
                 .tenantName(request.getTenantName())
                 .displayName(request.getDisplayName())
                 .schemaName(schemaName)
@@ -170,7 +171,8 @@ public class TenantService {
             throw new IllegalStateException("Tenant is not active: " + tenantId);
         }
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail = com.tss.aml.util.NormalizationUtils.normalizeEmail(request.getEmail());
+        if (userRepository.existsByEmail(normalizedEmail)) {
             throw new IllegalArgumentException("Email already exists: " + request.getEmail());
         }
 
@@ -189,7 +191,7 @@ public class TenantService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .phoneNumber(request.getPhoneNumber())
-                .email(request.getEmail())
+                .email(normalizedEmail)
                 .passwordHash(encodedPassword)
                 .isActive(true)
                 .mustResetPassword(true)

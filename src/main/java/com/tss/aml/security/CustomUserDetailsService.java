@@ -39,6 +39,9 @@ public class CustomUserDetailsService implements UserDetailsService {
             }
         }
 
+        lookupEmail = com.tss.aml.util.NormalizationUtils.normalizeEmail(lookupEmail);
+        tenantCode = com.tss.aml.util.NormalizationUtils.normalizeTenantCode(tenantCode);
+
         if (tenantCode != null) {
             Users user = usersRepository.findByEmailAndTenant_TenantCode(lookupEmail, tenantCode)
                     .orElseThrow(() -> new UsernameNotFoundException("Invalid email or password"));

@@ -115,6 +115,7 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
                             .accountHolderName(row.getOriginatorName())
                             .accountType(AccountType.WALLET)
                             .countryCode(row.getCountryCode())
+                            .accountType(com.tss.aml.enums.AccountType.SAVINGS)
                             .build()));
 
             FinancialTransaction txn = FinancialTransaction.builder()
@@ -142,9 +143,6 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
         List<Rule> activeRules = Collections.emptyList();
         if (uploadingUser != null && uploadingUser.getTenant() != null) {
             activeRules = ruleRepository.findActiveRulesByTenantId(uploadingUser.getTenant().getTenantId());
-        }
-        if (activeRules.isEmpty()) {
-            activeRules = ruleRepository.findByStatus(RuleStatus.ACTIVE);
         }
 
         List<Alert> generatedAlerts = ruleEngineService.evaluateBatch(savedTxns, activeRules);

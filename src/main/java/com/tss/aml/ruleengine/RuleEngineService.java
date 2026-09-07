@@ -33,7 +33,7 @@ public class RuleEngineService {
             return Collections.emptyList();
         }
 
-        List<Alert> generatedAlerts = batchTransactions.parallelStream()
+        List<Alert> generatedAlerts = batchTransactions.stream()
                 .flatMap(txn -> activeRules.stream()
                         .map(rule -> evaluateRule(txn, rule))
                         .filter(Objects::nonNull)

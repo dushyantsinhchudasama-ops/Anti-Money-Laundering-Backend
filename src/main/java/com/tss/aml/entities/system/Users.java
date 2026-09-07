@@ -71,4 +71,12 @@ public class Users extends BaseEntity {
 
     @Column(name = "locked_until")
     private LocalDateTime lockedUntil;
+
+    @PrePersist
+    @PreUpdate
+    public void normalizeFields() {
+        if (this.email != null) {
+            this.email = com.tss.aml.util.NormalizationUtils.normalizeEmail(this.email);
+        }
+    }
 }

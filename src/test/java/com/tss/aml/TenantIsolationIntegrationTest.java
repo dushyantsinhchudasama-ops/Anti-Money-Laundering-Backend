@@ -8,6 +8,7 @@ import com.tss.aml.dtos.tenant.CreateTenantRequest;
 import com.tss.aml.dtos.tenant.CreateTenantResponse;
 import com.tss.aml.entities.system.SystemAdmin;
 import com.tss.aml.entities.system.Tenant;
+import com.tss.aml.entities.system.Users;
 import com.tss.aml.repositories.SystemAdminRepository;
 import com.tss.aml.repositories.TenantRepository;
 import com.tss.aml.repositories.UserRepository;
@@ -140,6 +141,9 @@ class TenantIsolationIntegrationTest {
         hdfcReq.setLastName("Admin");
         hdfcReq.setEmail(hdfcEmail);
         tenantService.createBankAdmin(hdfcTenant.getTenantId(), hdfcReq);
+        Users hdfcUser = userRepository.findByEmail(hdfcEmail).orElseThrow();
+        hdfcUser.setMustResetPassword(false);
+        userRepository.save(hdfcUser);
 
         // 4. Ensure ICICI Bank Admin user exists
         String iciciEmail = "admin_iso@icici.com";
@@ -149,6 +153,9 @@ class TenantIsolationIntegrationTest {
         iciciReq.setLastName("Admin");
         iciciReq.setEmail(iciciEmail);
         tenantService.createBankAdmin(iciciTenant.getTenantId(), iciciReq);
+        Users iciciUser = userRepository.findByEmail(iciciEmail).orElseThrow();
+        iciciUser.setMustResetPassword(false);
+        userRepository.save(iciciUser);
 
         userRepository.findByEmail(hdfcEmail).ifPresent(u -> { u.setMustResetPassword(false); userRepository.save(u); });
         userRepository.findByEmail(iciciEmail).ifPresent(u -> { u.setMustResetPassword(false); userRepository.save(u); });

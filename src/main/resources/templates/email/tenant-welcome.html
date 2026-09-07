@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to AML Compliance System</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 0;
+            color: #334155;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .email-header {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            padding: 32px 24px;
+            text-align: center;
+        }
+        .email-header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .email-header p {
+            color: #c7d2fe;
+            margin: 8px 0 0 0;
+            font-size: 14px;
+        }
+        .email-body {
+            padding: 32px 24px;
+        }
+        .greeting {
+            font-size: 18px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 16px;
+        }
+        .message-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #475569;
+            margin-bottom: 24px;
+        }
+        .credentials-card {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #4f46e5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 28px;
+        }
+        .credential-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .credential-row:last-child {
+            border-bottom: none;
+        }
+        .credential-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .credential-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .password-badge {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            font-weight: 700;
+            color: #4338ca;
+            background-color: #e0e7ff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            letter-spacing: 1px;
+        }
+        .cta-container {
+            text-align: center;
+            margin: 32px 0 24px 0;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #4f46e5;
+            color: #ffffff !important;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 14px 28px;
+            border-radius: 8px;
+            text-decoration: none;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+            transition: background-color 0.2s;
+        }
+        .security-notice {
+            background-color: #fffbeb;
+            border: 1px solid #fef3c7;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 13px;
+            color: #92400e;
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+        .security-notice strong {
+            color: #78350f;
+        }
+        .email-footer {
+            background-color: #f8fafc;
+            padding: 20px 24px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>AML Compliance System</h1>
+            <p>Anti-Money Laundering Portal</p>
+        </div>
+
+        <div class="email-body">
+            <div class="greeting" th:text="'Hello ' + ${adminFirstName} + ','">Hello Bank Admin,</div>
+
+            <p class="message-text">
+                Your Bank Administrator account for <strong th:text="${tenantName}">Organization</strong> (<span th:text="${tenantCode}">CODE</span>) has been successfully created. You can use the temporary credentials provided below to access the AML Compliance System.
+            </p>
+
+            <div class="credentials-card">
+                <div class="credential-row">
+                    <span class="credential-label">Organization</span>
+                    <span class="credential-value" th:text="${tenantName} + ' (' + ${tenantCode} + ')'">Bank Name</span>
+                </div>
+                <div class="credential-row">
+                    <span class="credential-label">Registered Email</span>
+                    <span class="credential-value" th:text="${adminEmail}">admin@bank.com</span>
+                </div>
+                <div class="credential-row">
+                    <span class="credential-label">Temporary Password</span>
+                    <span class="password-badge" th:text="${temporaryPassword}">TmpAdmin@12345</span>
+                </div>
+            </div>
+
+            <div class="cta-container">
+                <a th:href="${loginUrl}" class="cta-button">Login to AML Compliance System</a>
+            </div>
+
+            <div class="security-notice">
+                <strong>Important Security Notice:</strong> You will be required to change your password upon your first login. Please do not share these temporary credentials with anyone.
+            </div>
+        </div>
+
+        <div class="email-footer">
+            &copy; AML Compliance System &bull; This is an automated message, please do not reply.
+        </div>
+    </div>
+</body>
+</html>

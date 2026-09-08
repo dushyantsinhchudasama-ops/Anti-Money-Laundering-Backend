@@ -16,6 +16,7 @@ import com.tss.aml.security.CustomUserDetails;
 import com.tss.aml.services.BatchValidationService;
 import com.tss.aml.services.interfaces.BatchIngestionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BatchIngestionServiceImpl implements BatchIngestionService {
@@ -144,6 +146,18 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
         if (uploadingUser != null && uploadingUser.getTenant() != null) {
             activeRules = ruleRepository.findActiveRulesByTenantId(uploadingUser.getTenant().getTenantId());
         }
+        if (activeRules == null) {
+            activeRules = Collections.emptyList();
+        }
+
+        log.info("Active rules count: {}", activeRules.size());
+
+        activeRules.forEach(rule ->
+                log.info(
+                        "Active Rule -> ID: {}, Code: {}, Name: {}, Typology: {}, Status: {}, Severity: {}, Parameters: {}",
+                        rule.getRuleId(), rule.getRuleCode(), rule.getRuleName(), rule.getTypology(), rule.getStatus(), rule.getDefaultSeverity(), rule.getParameters()
+                )
+        );
 
         List<Alert> generatedAlerts = ruleEngineService.evaluateBatch(savedTxns, activeRules);
 

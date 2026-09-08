@@ -22,6 +22,7 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
     Optional<Users> findByUserIdAndTenant_TenantCode(@Param("id") UUID id, @Param("tenantCode") String tenantCode);
 
     Page<Users> findAllByTenant_TenantIdAndRole(UUID tenantId, UserRole userRole, Pageable pageable);
+    Page<Users> findAllByTenant_TenantId(UUID tenantId, Pageable pageable);
 
     Optional<Users> findByUserCode(String userCode);
 

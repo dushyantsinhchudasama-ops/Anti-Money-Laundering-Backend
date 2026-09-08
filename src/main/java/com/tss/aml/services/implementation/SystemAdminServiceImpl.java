@@ -1,9 +1,6 @@
 package com.tss.aml.services.implementation;
 
-import com.tss.aml.dtos.rule.AssignRuleRequest;
-import com.tss.aml.dtos.rule.CreateRuleRequest;
-import com.tss.aml.dtos.rule.CreateRuleResponse;
-import com.tss.aml.dtos.rule.RuleAssignmentResponse;
+import com.tss.aml.dtos.rule.*;
 import com.tss.aml.entities.system.BankRuleAssignment;
 import com.tss.aml.entities.system.Rule;
 import com.tss.aml.entities.system.RuleVersionHistory;
@@ -11,14 +8,18 @@ import com.tss.aml.entities.system.SystemAdmin;
 import com.tss.aml.entities.system.Tenant;
 import com.tss.aml.enums.RuleStatus;
 import com.tss.aml.enums.TenantStatus;
+import com.tss.aml.exceptions.base.ResourceNotFoundException;
 import com.tss.aml.repositories.BankRuleAssignmentRepository;
 import com.tss.aml.repositories.RuleRepository;
 import com.tss.aml.repositories.RuleVersionHistoryRepository;
 import com.tss.aml.repositories.SystemAdminRepository;
 import com.tss.aml.repositories.TenantRepository;
+import com.tss.aml.ruleengine.validators.RuleParameterValidationService;
 import com.tss.aml.security.CustomUserDetails;
 import com.tss.aml.services.interfaces.ISystemAdminService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -36,10 +38,13 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
     private final SystemAdminRepository systemAdminRepository;
     private final TenantRepository tenantRepository;
     private final BankRuleAssignmentRepository bankRuleAssignmentRepository;
+    private final RuleParameterValidationService ruleParameterValidationService;
 
     @Override
     @Transactional
     public CreateRuleResponse addNewRule(CreateRuleRequest request) {
+        ruleParameterValidationService.validate(request.getTypology(), request.getParameters());
+
         SystemAdmin currAdmin = getAuthenticatedSystemAdmin();
 
         String ruleCode = "RULE-" + request.getTypology().name() + "-" + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
@@ -133,6 +138,70 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
                 .orElseThrow(() -> new IllegalArgumentException("Assignment not found for tenant " + tenantId + " and rule " + ruleId));
 
         bankRuleAssignmentRepository.delete(assignment);
+    }
+
+    @Override
+    @Transactional
+    public CreateRuleResponse updateRule(UUID ruleId, UpdateRuleRequest request) {
+        Rule rule = ruleRepository.findById(ruleId).orElseThrow(
+                () -> new ResourceNotFoundException("Rule having Id: " + ruleId + " not found.")
+        );
+
+        ruleParameterValidationService.validate(request.getTypology(), request.getParameters());
+
+        SystemAdmin currAdmin = getAuthenticatedSystemAdmin();
+
+        Map<String, Object> prevValues = rule.getParameters();
+
+        rule.setRuleName(request.getRuleName());
+        rule.setDescription(request.getDescription());
+        rule.setTypology(request.getTypology());
+        rule.setDefaultSeverity(request.getDefaultSeverity());
+        rule.setParameters(request.getParameters());
+
+        rule = ruleRepository.save(rule);
+
+        RuleVersionHistory versionHistory = RuleVersionHistory.builder()
+                .rule(rule)
+                .changedBy(currAdmin)
+                .previousValues(prevValues != null ? prevValues.toString() : null)
+                .updatedValues(rule.getParameters() != null ? rule.getParameters().toString() : null)
+                .changedAt(LocalDateTime.now())
+                .build();
+
+        ruleVersionHistoryRepository.save(versionHistory);
+
+        return CreateRuleResponse.builder()
+                .ruleId(rule.getRuleId())
+                .ruleCode(rule.getRuleCode())
+                .ruleName(rule.getRuleName())
+                .description(rule.getDescription())
+                .typology(rule.getTypology())
+                .parameters(rule.getParameters())
+                .defaultSeverity(rule.getDefaultSeverity())
+                .status(rule.getStatus())
+                .isActive(rule.getIsDeleted() == null || !rule.getIsDeleted())
+                .build();
+    }
+
+    @Override
+    public Page<CreateRuleResponse> getAllRule(Pageable pageable) {
+        Page<Rule> rulePage = ruleRepository.findAll(pageable);
+
+        return rulePage.map(
+            rule -> CreateRuleResponse.builder()
+                .ruleId(rule.getRuleId())
+                .ruleCode(rule.getRuleCode())
+                .ruleName(rule.getRuleName())
+                .description(rule.getDescription())
+                .typology(rule.getTypology())
+                .parameters(rule.getParameters())
+                .defaultSeverity(rule.getDefaultSeverity())
+                .status(rule.getStatus())
+                .isActive(rule.getIsDeleted() == null || !rule.getIsDeleted())
+                .build()
+
+        );
     }
 
     private SystemAdmin getAuthenticatedSystemAdmin() {

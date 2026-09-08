@@ -163,7 +163,7 @@ class BankAdminManagementIntegrationTest {
         ruleRequest.setRuleName("Test Round Amount Rule");
         ruleRequest.setDescription("Detects round amount transfers");
         ruleRequest.setTypology(RuleTypology.ROUND_AMOUNT_FLAGGING);
-        ruleRequest.setParameters(objectMapper.readValue("{\"threshold\": 50000}", java.util.Map.class));
+        ruleRequest.setParameters(objectMapper.readValue("{\"moduloThreshold\": 50000}", java.util.Map.class));
         ruleRequest.setDefaultSeverity(RuleSeverity.HIGH);
 
         MvcResult result = mockMvc.perform(post("/api/v1/system/admin/rules")

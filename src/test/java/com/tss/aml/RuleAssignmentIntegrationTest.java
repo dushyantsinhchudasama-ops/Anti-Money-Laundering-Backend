@@ -132,6 +132,15 @@ class RuleAssignmentIntegrationTest {
     @Autowired
     private BatchValidationErrorRepository batchValidationErrorRepository;
 
+    @Autowired
+    private com.tss.aml.repositories.AuditLogRepository auditLogRepository;
+
+    @Autowired
+    private com.tss.aml.repositories.NotificationRepository notificationRepository;
+
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(context)
@@ -141,10 +150,23 @@ class RuleAssignmentIntegrationTest {
         TenantContext.clear();
         SecurityContextHolder.clearContext();
 
-        alertRepository.deleteAll();
-        transactionRepository.deleteAll();
-        batchValidationErrorRepository.deleteAll();
-        batchRepository.deleteAll();
+        try {
+            List<String> schemas = jdbcTemplate.queryForList(
+                    "SELECT DISTINCT table_schema FROM information_schema.tables WHERE table_name IN ('transaction_batch', 'alerts', 'audit_log', 'aml_case')", String.class);
+            for (String s : schemas) {
+                if (!"information_schema".equalsIgnoreCase(s) && !"pg_catalog".equalsIgnoreCase(s)) {
+                    List<String> existingTables = jdbcTemplate.queryForList(
+                            "SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_name IN ('case_note', 'escalation', 'sar_str', 'audit_log', 'notification', 'alerts', 'aml_case', 'batch_validation_error', 'financial_transaction', 'transaction_batch', 'account')",
+                            String.class, s);
+                    for (String t : existingTables) {
+                        try {
+                            jdbcTemplate.execute("TRUNCATE TABLE \"" + s + "\".\"" + t + "\" CASCADE");
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+
         bankRuleAssignmentRepository.deleteAll();
         userRepository.deleteAll();
         ruleRepository.deleteAll();
@@ -448,14 +470,38 @@ class RuleAssignmentIntegrationTest {
 
         MockMultipartFile excelFile = createValidExcelBatchFile();
 
+        CustomUserDetails detailsA = CustomUserDetails.builder()
+                .userId(tenantAUser.getUserId())
+                .username(tenantAUser.getEmail())
+                .password(tenantAUser.getPasswordHash())
+                .authorities(List.of(new SimpleGrantedAuthority("ROLE_BANK_ADMIN")))
+                .tenantId(activeTenantA.getTenantId())
+                .tenantCode(activeTenantA.getTenantCode())
+                .enabled(true)
+                .accountNonLocked(true)
+                .mustResetPassword(false)
+                .build();
+
+        CustomUserDetails detailsB = CustomUserDetails.builder()
+                .userId(tenantBUser.getUserId())
+                .username(tenantBUser.getEmail())
+                .password(tenantBUser.getPasswordHash())
+                .authorities(List.of(new SimpleGrantedAuthority("ROLE_BANK_ADMIN")))
+                .tenantId(activeTenantB.getTenantId())
+                .tenantCode(activeTenantB.getTenantCode())
+                .enabled(true)
+                .accountNonLocked(true)
+                .mustResetPassword(false)
+                .build();
+
         // 1. Process batch for Tenant A (has activeRule1 assigned)
-        BatchUploadResponseDto responseA = batchIngestionService.processBatchUpload(excelFile, tenantAUser);
+        BatchUploadResponseDto responseA = batchIngestionService.processBatchUpload(excelFile, detailsA);
         assertThat(responseA.getStatus()).isEqualTo(BatchStatus.PROCESSED_ALERTS_GENERATED);
         assertThat(responseA.getAlertsGeneratedCount()).isGreaterThan(0);
 
         // 2. Process batch for Tenant B (has NO rules assigned)
         // Must NOT fallback to activeRule1 or activeRule2 globally!
-        BatchUploadResponseDto responseB = batchIngestionService.processBatchUpload(excelFile, tenantBUser);
+        BatchUploadResponseDto responseB = batchIngestionService.processBatchUpload(excelFile, detailsB);
         assertThat(responseB.getStatus()).isEqualTo(BatchStatus.PROCESSED_NO_ALERTS);
         assertThat(responseB.getAlertsGeneratedCount()).isEqualTo(0);
     }

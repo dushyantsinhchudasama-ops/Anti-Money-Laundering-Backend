@@ -89,6 +89,30 @@ class BankAdminCreationIntegrationTest {
     @MockitoSpyBean
     private EmailService emailService;
 
+    @Autowired
+    private com.tss.aml.repositories.AuditLogRepository auditLogRepository;
+
+    @Autowired
+    private com.tss.aml.repositories.NotificationRepository notificationRepository;
+
+    @Autowired
+    private com.tss.aml.repositories.AlertRepository alertRepository;
+
+    @Autowired
+    private com.tss.aml.repositories.AmlCaseRepository amlCaseRepository;
+
+    @Autowired
+    private com.tss.aml.repositories.FinancialTransactionRepository financialTransactionRepository;
+
+    @Autowired
+    private com.tss.aml.repositories.TransactionBatchRepository batchRepository;
+
+    @Autowired
+    private com.tss.aml.repositories.BatchValidationErrorRepository batchValidationErrorRepository;
+
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     private SystemAdmin systemAdmin;
     private String systemAdminToken;
 
@@ -100,6 +124,24 @@ class BankAdminCreationIntegrationTest {
 
         TenantContext.clear();
         SecurityContextHolder.clearContext();
+
+        try {
+            List<String> schemas = jdbcTemplate.queryForList(
+                    "SELECT DISTINCT table_schema FROM information_schema.tables WHERE table_name IN ('transaction_batch', 'alerts', 'audit_log', 'aml_case')", String.class);
+            for (String s : schemas) {
+                if (!"information_schema".equalsIgnoreCase(s) && !"pg_catalog".equalsIgnoreCase(s)) {
+                    List<String> existingTables = jdbcTemplate.queryForList(
+                            "SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_name IN ('case_note', 'escalation', 'sar_str', 'audit_log', 'notification', 'alerts', 'aml_case', 'batch_validation_error', 'financial_transaction', 'transaction_batch', 'account')",
+                            String.class, s);
+                    for (String t : existingTables) {
+                        try {
+                            jdbcTemplate.execute("TRUNCATE TABLE \"" + s + "\".\"" + t + "\" CASCADE");
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+
         userRepository.deleteAll();
 
         when(mailSender.createMimeMessage()).thenAnswer(invocation ->

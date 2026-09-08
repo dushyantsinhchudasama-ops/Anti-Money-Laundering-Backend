@@ -88,6 +88,9 @@ class BankAdminCreationIntegrationTest {
     @MockitoSpyBean
     private EmailService emailService;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     private SystemAdmin systemAdmin;
     private String systemAdminToken;
 
@@ -99,6 +102,20 @@ class BankAdminCreationIntegrationTest {
 
         TenantContext.clear();
         SecurityContextHolder.clearContext();
+
+        try {
+            java.util.List<String> schemas = jdbcTemplate.queryForList("SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 'tenant_%'", String.class);
+            schemas.add("public");
+            java.util.List<String> tables = java.util.List.of("aml_case", "alert", "financial_transaction", "batch_validation_error", "transaction_batch", "account");
+            for (String schema : schemas) {
+                for (String table : tables) {
+                    try {
+                        jdbcTemplate.execute("TRUNCATE TABLE " + schema + "." + table + " CASCADE");
+                    } catch (Exception ignored) {}
+                }
+            }
+        } catch (Exception ignored) {}
+
         userRepository.deleteAll();
 
         when(mailSender.createMimeMessage()).thenAnswer(invocation ->

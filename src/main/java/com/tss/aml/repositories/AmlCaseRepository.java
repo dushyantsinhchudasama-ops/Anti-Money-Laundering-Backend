@@ -36,5 +36,9 @@ public interface AmlCaseRepository extends JpaRepository<AmlCase, UUID> {
             @Param("assignedToId") UUID assignedToId,
             org.springframework.data.domain.Pageable pageable
     );
+
+    long countByAssignedTo_UserId(UUID userId);
+
+    long countByAssignedTo_UserIdAndStatus(UUID userId, CaseStatus status);
 }
 

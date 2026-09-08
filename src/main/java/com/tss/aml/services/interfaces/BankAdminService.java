@@ -13,5 +13,6 @@ public interface BankAdminService {
     ComplianceOfficerResponse getComplianceOfficer(UUID officerId, CustomUserDetails currentUser);
     Page<ComplianceOfficerResponse> getAllComplianceOfficerOfTenant(UUID tenantId, Pageable pageable);
     ComplianceOfficerResponse deactivateComplianceOfficer(UUID officerId, CustomUserDetails currentUser);
+    ComplianceOfficerResponse activateComplianceOfficer(UUID officerId, CustomUserDetails currentUser);
     ComplianceOfficerResponse resetComplianceOfficerPassword(UUID officerId, CustomUserDetails currentUser);
 }

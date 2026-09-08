@@ -8,4 +8,19 @@ public interface EmailService {
             String tenantCode,
             String temporaryPassword
     );
+
+    void sendComplianceOfficerWelcomeEmail(
+            String officerEmail,
+            String officerFirstName,
+            String tenantName,
+            String tenantCode,
+            String userCode,
+            String temporaryPassword
+    );
+
+    void sendPasswordResetEmail(
+            String userEmail,
+            String firstName,
+            String temporaryPassword
+    );
 }

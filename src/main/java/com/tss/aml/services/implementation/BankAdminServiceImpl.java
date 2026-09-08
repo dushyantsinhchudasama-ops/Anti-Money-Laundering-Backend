@@ -28,6 +28,8 @@ import java.util.UUID;
 
 import com.tss.aml.tenant.TenantContext;
 
+import com.tss.aml.services.EmailService;
+
 @RequiredArgsConstructor
 @Service
 @Slf4j
@@ -36,6 +38,7 @@ public class BankAdminServiceImpl implements BankAdminService {
     private final TenantService tenantService;
     private final PasswordEncoder passwordEncoder;
     private final AmlCaseRepository amlCaseRepository;
+    private final EmailService emailService;
 
     @Override
     @Transactional
@@ -80,6 +83,15 @@ public class BankAdminServiceImpl implements BankAdminService {
                 complianceOfficer.getEmail(), complianceOfficer.getUserId(), tenant.getTenantCode(),
                 tenant.getTenantId(), currentUser.getUsername());
 
+        emailService.sendComplianceOfficerWelcomeEmail(
+                complianceOfficer.getEmail(),
+                complianceOfficer.getFirstName(),
+                tenant.getTenantName(),
+                tenant.getTenantCode(),
+                complianceOfficer.getUserCode(),
+                temporaryPassword
+        );
+
         return ComplianceOfficerResponse.builder()
                 .userId(complianceOfficer.getUserId())
                 .userCode(complianceOfficer.getUserCode())
@@ -92,7 +104,6 @@ public class BankAdminServiceImpl implements BankAdminService {
                 .role(complianceOfficer.getRole())
                 .isActive(complianceOfficer.getIsActive())
                 .mustResetPassword(complianceOfficer.getMustResetPassword())
-                .temporaryPassword(temporaryPassword)
                 .createdAt(complianceOfficer.getCreatedAt())
                 .build();
     }
@@ -207,6 +218,36 @@ public class BankAdminServiceImpl implements BankAdminService {
 
     @Override
     @Transactional
+    public ComplianceOfficerResponse activateComplianceOfficer(UUID officerId, CustomUserDetails currentUser) {
+        Users complianceOfficer = userRepository
+                .findByUserIdAndTenant_TenantCode(officerId, currentUser.getTenantCode()).orElseThrow(
+                        () -> new ResourceNotFoundException(
+                                "Compliance Officer having Id: " + officerId + " not found."));
+
+        complianceOfficer.setIsActive(true);
+        complianceOfficer = userRepository.save(complianceOfficer);
+
+        log.info("Reactivated Compliance Officer '{}' (ID: {}) by Bank Admin '{}'",
+                complianceOfficer.getEmail(), officerId, currentUser.getUsername());
+
+        return ComplianceOfficerResponse.builder()
+                .userId(complianceOfficer.getUserId())
+                .userCode(complianceOfficer.getUserCode())
+                .tenantId(complianceOfficer.getTenant() != null ? complianceOfficer.getTenant().getTenantId() : null)
+                .employeeId(complianceOfficer.getEmployeeId())
+                .firstName(complianceOfficer.getFirstName())
+                .lastName(complianceOfficer.getLastName())
+                .email(complianceOfficer.getEmail())
+                .phoneNumber(complianceOfficer.getPhoneNumber())
+                .role(complianceOfficer.getRole())
+                .isActive(complianceOfficer.getIsActive())
+                .mustResetPassword(complianceOfficer.getMustResetPassword())
+                .createdAt(complianceOfficer.getCreatedAt())
+                .build();
+    }
+
+    @Override
+    @Transactional
     public ComplianceOfficerResponse resetComplianceOfficerPassword(UUID officerId, CustomUserDetails currentUser) {
         Users complianceOfficer = userRepository
                 .findByUserIdAndTenant_TenantCode(officerId, currentUser.getTenantCode()).orElseThrow(
@@ -222,6 +263,12 @@ public class BankAdminServiceImpl implements BankAdminService {
         log.info("Reset password for Compliance Officer '{}' (ID: {}) by Bank Admin '{}'",
                 complianceOfficer.getEmail(), officerId, currentUser.getUsername());
 
+        emailService.sendPasswordResetEmail(
+                complianceOfficer.getEmail(),
+                complianceOfficer.getFirstName(),
+                newTempPassword
+        );
+
         return ComplianceOfficerResponse.builder()
                 .userId(complianceOfficer.getUserId())
                 .userCode(complianceOfficer.getUserCode())
@@ -234,7 +281,6 @@ public class BankAdminServiceImpl implements BankAdminService {
                 .role(complianceOfficer.getRole())
                 .isActive(complianceOfficer.getIsActive())
                 .mustResetPassword(complianceOfficer.getMustResetPassword())
-                .temporaryPassword(newTempPassword)
                 .createdAt(complianceOfficer.getCreatedAt())
                 .build();
     }

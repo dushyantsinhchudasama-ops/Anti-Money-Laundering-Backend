@@ -1,12 +1,11 @@
 package com.tss.aml.controllers;
 
-import com.tss.aml.dtos.rule.AssignRuleRequest;
-import com.tss.aml.dtos.rule.CreateRuleRequest;
-import com.tss.aml.dtos.rule.CreateRuleResponse;
-import com.tss.aml.dtos.rule.RuleAssignmentResponse;
+import com.tss.aml.dtos.rule.*;
 import com.tss.aml.services.interfaces.ISystemAdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,6 +27,25 @@ public class SystemAdminController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @PatchMapping("/rules/update/{ruleId}")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    public ResponseEntity<CreateRuleResponse> updateRule(
+            @PathVariable("ruleId") UUID ruleId,
+            @RequestBody UpdateRuleRequest request
+    ) {
+        CreateRuleResponse response = systemAdminService.updateRule(ruleId, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/rules/all")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    public ResponseEntity<Page<CreateRuleResponse>> getAllRule(
+            Pageable pageable
+    ) {
+        Page<CreateRuleResponse> response = systemAdminService.getAllRule(pageable);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
     @PostMapping("/rules/{ruleId}/assign")
     @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<RuleAssignmentResponse> assignRuleToTenant(
@@ -47,7 +65,7 @@ public class SystemAdminController {
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/rules/{ruleId}/assign/{tenantId}")
+    @DeleteMapping("/rules/{ruleId}/unassign/{tenantId}")
     @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<Void> unassignRuleFromTenant(
             @PathVariable("ruleId") UUID ruleId,

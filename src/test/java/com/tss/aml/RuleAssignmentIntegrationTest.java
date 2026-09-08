@@ -133,6 +133,12 @@ class RuleAssignmentIntegrationTest {
     private BatchValidationErrorRepository batchValidationErrorRepository;
 
     @Autowired
+    private com.tss.aml.repositories.AuditLogRepository auditLogRepository;
+
+    @Autowired
+    private com.tss.aml.repositories.NotificationRepository notificationRepository;
+
+    @Autowired
     private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @BeforeEach
@@ -145,22 +151,59 @@ class RuleAssignmentIntegrationTest {
         SecurityContextHolder.clearContext();
 
         try {
-            java.util.List<String> schemas = jdbcTemplate.queryForList("SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 'tenant_%'", String.class);
-            schemas.add("public");
-            java.util.List<String> tables = java.util.List.of("aml_case", "alert", "financial_transaction", "batch_validation_error", "transaction_batch", "account");
+            List<String> schemas = jdbcTemplate.queryForList(
+                    "SELECT DISTINCT table_schema " +
+                    "FROM information_schema.tables " +
+                    "WHERE table_name IN ('transaction_batch', 'alerts', 'alert', 'audit_log', 'aml_case')",
+                    String.class
+            );
+
             for (String schema : schemas) {
-                for (String table : tables) {
-                    try {
-                        jdbcTemplate.execute("TRUNCATE TABLE " + schema + "." + table + " CASCADE");
-                    } catch (Exception ignored) {}
+                if (!"information_schema".equalsIgnoreCase(schema)
+                        && !"pg_catalog".equalsIgnoreCase(schema)) {
+
+                    List<String> existingTables = jdbcTemplate.queryForList(
+                            "SELECT table_name " +
+                            "FROM information_schema.tables " +
+                            "WHERE table_schema = ? " +
+                            "AND table_name IN (" +
+                            "'case_note', " +
+                            "'escalation', " +
+                            "'sar_str', " +
+                            "'audit_log', " +
+                            "'notification', " +
+                            "'alerts', " +
+                            "'alert', " +
+                            "'aml_case', " +
+                            "'batch_validation_error', " +
+                            "'financial_transaction', " +
+                            "'transaction_batch', " +
+                            "'account'" +
+                            ")",
+                            String.class,
+                            schema
+                    );
+
+                    for (String table : existingTables) {
+                        try {
+                            jdbcTemplate.execute(
+                                    "TRUNCATE TABLE \"" + schema + "\".\"" + table + "\" CASCADE"
+                            );
+                        } catch (Exception ignored) {
+                            // Ignore tables that cannot be truncated
+                        }
+                    }
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            // Ignore cleanup failures so test setup can continue
+        }
 
         alertRepository.deleteAll();
         transactionRepository.deleteAll();
         batchValidationErrorRepository.deleteAll();
         batchRepository.deleteAll();
+
         bankRuleAssignmentRepository.deleteAll();
         userRepository.deleteAll();
         ruleRepository.deleteAll();
@@ -179,8 +222,15 @@ class RuleAssignmentIntegrationTest {
                     return systemAdminRepository.save(admin);
                 });
 
-        UserDetails adminDetails = customUserDetailsService.loadUserByUsername(systemAdmin.getEmail());
-        Authentication sysAuth = new UsernamePasswordAuthenticationToken(adminDetails, null, adminDetails.getAuthorities());
+        UserDetails adminDetails =
+                customUserDetailsService.loadUserByUsername(systemAdmin.getEmail());
+
+        Authentication sysAuth = new UsernamePasswordAuthenticationToken(
+                adminDetails,
+                null,
+                adminDetails.getAuthorities()
+        );
+
         SecurityContextHolder.getContext().setAuthentication(sysAuth);
         sysAdminJwtToken = jwtTokenProvider.generateToken(sysAuth);
 
@@ -224,7 +274,10 @@ class RuleAssignmentIntegrationTest {
                 .typology(RuleTypology.GEOGRAPHIC_RISK)
                 .defaultSeverity(RuleSeverity.HIGH)
                 .status(RuleStatus.ACTIVE)
-                .parameters(Map.of("highRiskCountries", List.of("IR", "KP"), "minAmount", 50000))
+                .parameters(Map.of(
+                        "highRiskCountries", List.of("IR", "KP"),
+                        "minAmount", 50000
+                ))
                 .build());
 
         activeRule2 = ruleRepository.save(Rule.builder()
@@ -234,7 +287,10 @@ class RuleAssignmentIntegrationTest {
                 .typology(RuleTypology.STRUCTURING_SMURFING)
                 .defaultSeverity(RuleSeverity.MEDIUM)
                 .status(RuleStatus.ACTIVE)
-                .parameters(Map.of("windowDays", 7, "minCount", 3))
+                .parameters(Map.of(
+                        "windowDays", 7,
+                        "minCount", 3
+                ))
                 .build());
 
         draftRule = ruleRepository.save(Rule.builder()
@@ -287,9 +343,15 @@ class RuleAssignmentIntegrationTest {
                 .mustResetPassword(false)
                 .build();
 
-        Authentication tenantAuth = new UsernamePasswordAuthenticationToken(tenantUserDetails, null, tenantUserDetails.getAuthorities());
+        Authentication tenantAuth = new UsernamePasswordAuthenticationToken(
+                tenantUserDetails,
+                null,
+                tenantUserDetails.getAuthorities()
+        );
+
         tenantAJwtToken = jwtTokenProvider.generateToken(tenantAuth);
     }
+
 
     @Test
     @DisplayName("1. System Admin can assign active rule to active tenant with server-side metadata")
@@ -464,14 +526,38 @@ class RuleAssignmentIntegrationTest {
 
         MockMultipartFile excelFile = createValidExcelBatchFile();
 
+        CustomUserDetails detailsA = CustomUserDetails.builder()
+                .userId(tenantAUser.getUserId())
+                .username(tenantAUser.getEmail())
+                .password(tenantAUser.getPasswordHash())
+                .authorities(List.of(new SimpleGrantedAuthority("ROLE_BANK_ADMIN")))
+                .tenantId(activeTenantA.getTenantId())
+                .tenantCode(activeTenantA.getTenantCode())
+                .enabled(true)
+                .accountNonLocked(true)
+                .mustResetPassword(false)
+                .build();
+
+        CustomUserDetails detailsB = CustomUserDetails.builder()
+                .userId(tenantBUser.getUserId())
+                .username(tenantBUser.getEmail())
+                .password(tenantBUser.getPasswordHash())
+                .authorities(List.of(new SimpleGrantedAuthority("ROLE_BANK_ADMIN")))
+                .tenantId(activeTenantB.getTenantId())
+                .tenantCode(activeTenantB.getTenantCode())
+                .enabled(true)
+                .accountNonLocked(true)
+                .mustResetPassword(false)
+                .build();
+
         // 1. Process batch for Tenant A (has activeRule1 assigned)
-        BatchUploadResponseDto responseA = batchIngestionService.processBatchUpload(excelFile, tenantAUser);
+        BatchUploadResponseDto responseA = batchIngestionService.processBatchUpload(excelFile, detailsA);
         assertThat(responseA.getStatus()).isEqualTo(BatchStatus.PROCESSED_ALERTS_GENERATED);
         assertThat(responseA.getAlertsGeneratedCount()).isGreaterThan(0);
 
         // 2. Process batch for Tenant B (has NO rules assigned)
         // Must NOT fallback to activeRule1 or activeRule2 globally!
-        BatchUploadResponseDto responseB = batchIngestionService.processBatchUpload(excelFile, tenantBUser);
+        BatchUploadResponseDto responseB = batchIngestionService.processBatchUpload(excelFile, detailsB);
         assertThat(responseB.getStatus()).isEqualTo(BatchStatus.PROCESSED_NO_ALERTS);
         assertThat(responseB.getAlertsGeneratedCount()).isEqualTo(0);
     }

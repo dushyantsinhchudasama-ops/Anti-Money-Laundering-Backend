@@ -11,11 +11,7 @@ import com.tss.aml.entities.tenant.AuditLog;
 import com.tss.aml.entities.tenant.CaseNote;
 import com.tss.aml.entities.tenant.Notification;
 import com.tss.aml.entities.system.Users;
-import com.tss.aml.enums.AlertStatus;
-import com.tss.aml.enums.CaseStatus;
-import com.tss.aml.enums.NotificationChannel;
-import com.tss.aml.enums.NotificationEventType;
-import com.tss.aml.enums.UserRole;
+import com.tss.aml.enums.*;
 import com.tss.aml.exceptions.base.ResourceNotFoundException;
 import com.tss.aml.repositories.AlertRepository;
 import com.tss.aml.repositories.AmlCaseRepository;
@@ -89,7 +85,8 @@ public class CaseServiceImpl implements CaseService {
             throw new IllegalArgumentException("User " + targetCO.getEmail() + " is not a Compliance Officer");
         }
 
-        if (!Boolean.TRUE.equals(targetCO.getIsActive())) {
+        
+        if (!targetCO.getIsActive()) {
             throw new IllegalArgumentException("Cannot assign case to an inactive Compliance Officer: " + targetCO.getEmail());
         }
 
@@ -119,7 +116,7 @@ public class CaseServiceImpl implements CaseService {
             CaseNote initialNote = CaseNote.builder()
                     .amlCase(newCase)
                     .author(bankAdminUser)
-                    .noteType(com.tss.aml.enums.NoteType.OBSERVATION)
+                    .noteType(NoteType.OBSERVATION)
                     .content(request.getInitialNote())
                     .build();
             newCase.getNotes().add(initialNote);

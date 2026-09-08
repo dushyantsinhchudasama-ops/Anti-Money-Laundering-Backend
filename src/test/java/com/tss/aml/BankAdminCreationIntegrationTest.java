@@ -40,6 +40,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
@@ -132,6 +133,13 @@ class BankAdminCreationIntegrationTest {
                 adminDetails, null, adminDetails.getAuthorities()
         );
         systemAdminToken = jwtTokenProvider.generateToken(auth);
+
+        // Clean up stale test users to ensure test idempotency
+        List<String> testEmails = List.of("admin@hdfc.com", "admin@icici.com", "admin@axis.com", "admin@random.com", "admin@inactive.com", "admin@kotak.com", "admin3@kotak.com", "admin@sbi.com");
+        testEmails.forEach(email -> userRepository.findByEmail(email).ifPresent(userRepository::delete));
+
+        List<String> testCodes = List.of("HDFC_ADMIN", "ICICI_ADMIN", "AXIS_ADMIN", "RANDOM_ADMIN", "INACTIVE_ADMIN", "KOTAK_ADMIN", "KOTAK_ADMIN_2", "SBI_ADMIN");
+        testCodes.forEach(code -> userRepository.findByUserCode(code).ifPresent(userRepository::delete));
     }
 
     private Tenant createTestTenant(String code, String name, String schema, TenantStatus status) {

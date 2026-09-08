@@ -22,6 +22,5 @@ public class ComplianceOfficerResponse {
     private UserRole role;
     private Boolean isActive;
     private Boolean mustResetPassword;
-    private String temporaryPassword;
     private LocalDateTime createdAt;
 }

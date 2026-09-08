@@ -132,6 +132,9 @@ class RuleAssignmentIntegrationTest {
     @Autowired
     private BatchValidationErrorRepository batchValidationErrorRepository;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(context)
@@ -140,6 +143,19 @@ class RuleAssignmentIntegrationTest {
 
         TenantContext.clear();
         SecurityContextHolder.clearContext();
+
+        try {
+            java.util.List<String> schemas = jdbcTemplate.queryForList("SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 'tenant_%'", String.class);
+            schemas.add("public");
+            java.util.List<String> tables = java.util.List.of("aml_case", "alert", "financial_transaction", "batch_validation_error", "transaction_batch", "account");
+            for (String schema : schemas) {
+                for (String table : tables) {
+                    try {
+                        jdbcTemplate.execute("TRUNCATE TABLE " + schema + "." + table + " CASCADE");
+                    } catch (Exception ignored) {}
+                }
+            }
+        } catch (Exception ignored) {}
 
         alertRepository.deleteAll();
         transactionRepository.deleteAll();

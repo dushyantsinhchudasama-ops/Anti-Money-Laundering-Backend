@@ -81,6 +81,16 @@ public class BankAdminController {
         return ResponseEntity.ok(response);
     }
 
+    @PatchMapping("/compliance-officers/{officerId}/activate")
+    @PreAuthorize("hasRole('BANK_ADMIN')")
+    public ResponseEntity<ComplianceOfficerResponse> activateComplianceOfficer(
+            @PathVariable String officerId,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        UUID officerUuid = parseUuid(officerId);
+        ComplianceOfficerResponse response = bankAdminService.activateComplianceOfficer(officerUuid, currentUser);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/compliance-officers/{officerId}/reset-password")
     @PreAuthorize("hasRole('BANK_ADMIN')")
     public ResponseEntity<ComplianceOfficerResponse> resetComplianceOfficerPassword(

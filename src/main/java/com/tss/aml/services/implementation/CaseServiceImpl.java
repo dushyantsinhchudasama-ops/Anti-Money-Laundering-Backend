@@ -81,6 +81,11 @@ public class CaseServiceImpl implements CaseService {
         Users targetCO = userRepository.findByUserIdAndTenant_TenantCode(request.getAssigneeId(), currentUser.getTenantCode())
                 .orElseThrow(() -> new ResourceNotFoundException("Compliance Officer not found with ID: " + request.getAssigneeId()));
 
+        if (targetCO.getRole() != UserRole.COMPLIANCE_OFFICER) {
+            throw new IllegalArgumentException("User " + targetCO.getEmail() + " is not a Compliance Officer");
+        }
+
+        
         if (!targetCO.getIsActive()) {
             throw new IllegalArgumentException("Cannot assign case to an inactive Compliance Officer: " + targetCO.getEmail());
         }
@@ -142,7 +147,7 @@ public class CaseServiceImpl implements CaseService {
                 .action("CASE_ASSIGNED")
                 .entityType("CASE")
                 .entityId(newCase.getCaseId().toString())
-                .details("Assigned case " + newCase.getCaseCode() + " with " + alerts.size() + " alert(s) to Compliance Officer " + targetCO.getEmail())
+                .details("Assigned case " + newCase.getCaseCode() + " with " + alerts.size() + " alert(s) to Compliance Officer " + targetCO.getEmail() + " (" + targetCO.getUserId() + ")")
                 .build();
         auditLogRepository.save(auditLog);
 
@@ -162,15 +167,27 @@ public class CaseServiceImpl implements CaseService {
             throw new IllegalStateException("Cannot reassign a closed case: " + amlCase.getCaseCode());
         }
 
+        Users previousAssignee = amlCase.getAssignedTo();
+        if (previousAssignee == null) {
+            throw new IllegalStateException("Cannot reassign an unassigned case: " + amlCase.getCaseCode() + ". Case must be assigned first.");
+        }
+
         Users newCO = userRepository.findByUserIdAndTenant_TenantCode(request.getNewAssigneeId(), currentUser.getTenantCode())
                 .orElseThrow(() -> new ResourceNotFoundException("Target Compliance Officer not found with ID: " + request.getNewAssigneeId()));
 
-        if (!newCO.getIsActive()) {
-            throw new IllegalArgumentException("Cannot reassign case to an inactive user: " + newCO.getEmail());
+        if (newCO.getRole() != UserRole.COMPLIANCE_OFFICER) {
+            throw new IllegalArgumentException("User " + newCO.getEmail() + " is not a Compliance Officer");
+        }
+
+        if (!Boolean.TRUE.equals(newCO.getIsActive())) {
+            throw new IllegalArgumentException("Cannot reassign case to an inactive Compliance Officer: " + newCO.getEmail());
+        }
+
+        if (previousAssignee.getUserId().equals(newCO.getUserId())) {
+            throw new IllegalArgumentException("Cannot reassign case to the current Compliance Officer: " + newCO.getEmail());
         }
 
         Users bankAdminUser = userRepository.findById(currentUser.getUserId()).orElse(null);
-        Users previousAssignee = amlCase.getAssignedTo();
         amlCase.setAssignedTo(newCO);
         amlCaseRepository.save(amlCase);
 
@@ -184,21 +201,21 @@ public class CaseServiceImpl implements CaseService {
                 .build();
         notificationRepository.save(notification);
 
-        // Audit log
+        // Audit log preserving historical previous & new assignee details
         AuditLog auditLog = AuditLog.builder()
                 .actor(bankAdminUser)
                 .action("CASE_REASSIGNED")
                 .entityType("CASE")
                 .entityId(amlCase.getCaseId().toString())
-                .details("Reassigned case " + amlCase.getCaseCode() + " from " +
-                        (previousAssignee != null ? previousAssignee.getEmail() : "unassigned") +
-                        " to " + newCO.getEmail() +
-                        (request.getReason() != null ? ". Reason: " + request.getReason() : ""))
+                .details("Reassigned case " + amlCase.getCaseCode() + " from Compliance Officer " +
+                        previousAssignee.getEmail() + " (" + previousAssignee.getUserId() + ") to Compliance Officer " +
+                        newCO.getEmail() + " (" + newCO.getUserId() + ")" +
+                        (request.getReason() != null && !request.getReason().isBlank() ? ". Reason: " + request.getReason() : ""))
                 .build();
         auditLogRepository.save(auditLog);
 
-        log.info("Reassigned Case '{}' (ID: {}) to CO '{}' by Bank Admin '{}'",
-                amlCase.getCaseCode(), amlCase.getCaseId(), newCO.getEmail(), currentUser.getUsername());
+        log.info("Reassigned Case '{}' (ID: {}) from CO '{}' to CO '{}' by Bank Admin '{}'",
+                amlCase.getCaseCode(), amlCase.getCaseId(), previousAssignee.getEmail(), newCO.getEmail(), currentUser.getUsername());
 
         return mapToCaseResponse(amlCase);
     }

@@ -58,4 +58,70 @@ public class EmailServiceImpl implements EmailService {
             // Do not rethrow exception to prevent corrupting database state
         }
     }
+
+    @Override
+    public void sendComplianceOfficerWelcomeEmail(
+            String officerEmail,
+            String officerFirstName,
+            String tenantName,
+            String tenantCode,
+            String userCode,
+            String temporaryPassword
+    ) {
+        try {
+            Context context = new Context();
+            context.setVariable("adminFirstName", officerFirstName != null ? officerFirstName : "Compliance Officer");
+            context.setVariable("tenantName", tenantName);
+            context.setVariable("tenantCode", tenantCode);
+            context.setVariable("adminEmail", officerEmail);
+            context.setVariable("userCode", userCode);
+            context.setVariable("temporaryPassword", temporaryPassword);
+            context.setVariable("loginUrl", loginUrl);
+
+            String htmlContent = templateEngine.process("email/tenant-welcome", context);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromAddress);
+            helper.setTo(officerEmail);
+            helper.setSubject("Welcome to AML Compliance System - Compliance Officer Account");
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Successfully sent welcome email to Compliance Officer '{}' for tenant '{}'", officerEmail, tenantCode);
+        } catch (Exception e) {
+            log.error("Failed to send welcome email to Compliance Officer '{}' for tenant '{}': {}", officerEmail, tenantCode, e.getMessage());
+        }
+    }
+
+    @Override
+    public void sendPasswordResetEmail(
+            String userEmail,
+            String firstName,
+            String temporaryPassword
+    ) {
+        try {
+            Context context = new Context();
+            context.setVariable("adminFirstName", firstName != null ? firstName : "User");
+            context.setVariable("adminEmail", userEmail);
+            context.setVariable("temporaryPassword", temporaryPassword);
+            context.setVariable("loginUrl", loginUrl);
+
+            String htmlContent = templateEngine.process("email/tenant-welcome", context);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromAddress);
+            helper.setTo(userEmail);
+            helper.setSubject("AML Compliance System - Password Reset");
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Successfully sent password reset email to '{}'", userEmail);
+        } catch (Exception e) {
+            log.error("Failed to send password reset email to '{}': {}", userEmail, e.getMessage());
+        }
+    }
 }

@@ -16,6 +16,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static com.tss.aml.util.NormalizationUtils.normalizeEmail;
+import static com.tss.aml.util.NormalizationUtils.normalizeTenantCode;
+
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
@@ -39,8 +42,8 @@ public class CustomUserDetailsService implements UserDetailsService {
             }
         }
 
-        lookupEmail = com.tss.aml.util.NormalizationUtils.normalizeEmail(lookupEmail);
-        tenantCode = com.tss.aml.util.NormalizationUtils.normalizeTenantCode(tenantCode);
+        lookupEmail = normalizeEmail(lookupEmail);
+        tenantCode = normalizeTenantCode(tenantCode);
 
         if (tenantCode != null) {
             Users user = usersRepository.findByEmailAndTenant_TenantCode(lookupEmail, tenantCode)
@@ -99,4 +102,4 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .mustResetPassword(false)
                 .build();
     }
-}
+}

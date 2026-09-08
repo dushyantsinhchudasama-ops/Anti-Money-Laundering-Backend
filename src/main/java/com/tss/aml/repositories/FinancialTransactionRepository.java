@@ -61,6 +61,14 @@ public interface FinancialTransactionRepository extends JpaRepository<FinancialT
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
+
+    java.util.List<FinancialTransaction> findByBatch_BatchId(UUID batchId);
+
+    org.springframework.data.domain.Page<FinancialTransaction> findByOriginatorAccount_AccountId(UUID accountId, org.springframework.data.domain.Pageable pageable);
+
+    java.util.List<FinancialTransaction> findByOriginatorAccount_AccountId(UUID accountId);
+
+    java.util.List<FinancialTransaction> findByOriginatorAccount_AccountIdAndTransactionIdNot(UUID accountId, UUID transactionId);
 }
 
 

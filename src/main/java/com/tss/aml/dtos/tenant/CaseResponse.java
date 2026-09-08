@@ -26,4 +26,5 @@ public class CaseResponse {
     private List<AlertResponse> alerts;
     private LocalDateTime createdAt;
     private LocalDateTime closedAt;
+    private String falsePositiveRationale;
 }

@@ -152,20 +152,57 @@ class RuleAssignmentIntegrationTest {
 
         try {
             List<String> schemas = jdbcTemplate.queryForList(
-                    "SELECT DISTINCT table_schema FROM information_schema.tables WHERE table_name IN ('transaction_batch', 'alerts', 'audit_log', 'aml_case')", String.class);
-            for (String s : schemas) {
-                if (!"information_schema".equalsIgnoreCase(s) && !"pg_catalog".equalsIgnoreCase(s)) {
+                    "SELECT DISTINCT table_schema " +
+                    "FROM information_schema.tables " +
+                    "WHERE table_name IN ('transaction_batch', 'alerts', 'alert', 'audit_log', 'aml_case')",
+                    String.class
+            );
+
+            for (String schema : schemas) {
+                if (!"information_schema".equalsIgnoreCase(schema)
+                        && !"pg_catalog".equalsIgnoreCase(schema)) {
+
                     List<String> existingTables = jdbcTemplate.queryForList(
-                            "SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_name IN ('case_note', 'escalation', 'sar_str', 'audit_log', 'notification', 'alerts', 'aml_case', 'batch_validation_error', 'financial_transaction', 'transaction_batch', 'account')",
-                            String.class, s);
-                    for (String t : existingTables) {
+                            "SELECT table_name " +
+                            "FROM information_schema.tables " +
+                            "WHERE table_schema = ? " +
+                            "AND table_name IN (" +
+                            "'case_note', " +
+                            "'escalation', " +
+                            "'sar_str', " +
+                            "'audit_log', " +
+                            "'notification', " +
+                            "'alerts', " +
+                            "'alert', " +
+                            "'aml_case', " +
+                            "'batch_validation_error', " +
+                            "'financial_transaction', " +
+                            "'transaction_batch', " +
+                            "'account'" +
+                            ")",
+                            String.class,
+                            schema
+                    );
+
+                    for (String table : existingTables) {
                         try {
-                            jdbcTemplate.execute("TRUNCATE TABLE \"" + s + "\".\"" + t + "\" CASCADE");
-                        } catch (Exception ignored) {}
+                            jdbcTemplate.execute(
+                                    "TRUNCATE TABLE \"" + schema + "\".\"" + table + "\" CASCADE"
+                            );
+                        } catch (Exception ignored) {
+                            // Ignore tables that cannot be truncated
+                        }
                     }
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            // Ignore cleanup failures so test setup can continue
+        }
+
+        alertRepository.deleteAll();
+        transactionRepository.deleteAll();
+        batchValidationErrorRepository.deleteAll();
+        batchRepository.deleteAll();
 
         bankRuleAssignmentRepository.deleteAll();
         userRepository.deleteAll();
@@ -185,8 +222,15 @@ class RuleAssignmentIntegrationTest {
                     return systemAdminRepository.save(admin);
                 });
 
-        UserDetails adminDetails = customUserDetailsService.loadUserByUsername(systemAdmin.getEmail());
-        Authentication sysAuth = new UsernamePasswordAuthenticationToken(adminDetails, null, adminDetails.getAuthorities());
+        UserDetails adminDetails =
+                customUserDetailsService.loadUserByUsername(systemAdmin.getEmail());
+
+        Authentication sysAuth = new UsernamePasswordAuthenticationToken(
+                adminDetails,
+                null,
+                adminDetails.getAuthorities()
+        );
+
         SecurityContextHolder.getContext().setAuthentication(sysAuth);
         sysAdminJwtToken = jwtTokenProvider.generateToken(sysAuth);
 
@@ -230,7 +274,10 @@ class RuleAssignmentIntegrationTest {
                 .typology(RuleTypology.GEOGRAPHIC_RISK)
                 .defaultSeverity(RuleSeverity.HIGH)
                 .status(RuleStatus.ACTIVE)
-                .parameters(Map.of("highRiskCountries", List.of("IR", "KP"), "minAmount", 50000))
+                .parameters(Map.of(
+                        "highRiskCountries", List.of("IR", "KP"),
+                        "minAmount", 50000
+                ))
                 .build());
 
         activeRule2 = ruleRepository.save(Rule.builder()
@@ -240,7 +287,10 @@ class RuleAssignmentIntegrationTest {
                 .typology(RuleTypology.STRUCTURING_SMURFING)
                 .defaultSeverity(RuleSeverity.MEDIUM)
                 .status(RuleStatus.ACTIVE)
-                .parameters(Map.of("windowDays", 7, "minCount", 3))
+                .parameters(Map.of(
+                        "windowDays", 7,
+                        "minCount", 3
+                ))
                 .build());
 
         draftRule = ruleRepository.save(Rule.builder()
@@ -293,9 +343,15 @@ class RuleAssignmentIntegrationTest {
                 .mustResetPassword(false)
                 .build();
 
-        Authentication tenantAuth = new UsernamePasswordAuthenticationToken(tenantUserDetails, null, tenantUserDetails.getAuthorities());
+        Authentication tenantAuth = new UsernamePasswordAuthenticationToken(
+                tenantUserDetails,
+                null,
+                tenantUserDetails.getAuthorities()
+        );
+
         tenantAJwtToken = jwtTokenProvider.generateToken(tenantAuth);
     }
+
 
     @Test
     @DisplayName("1. System Admin can assign active rule to active tenant with server-side metadata")

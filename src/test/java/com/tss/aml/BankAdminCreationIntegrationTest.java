@@ -116,56 +116,111 @@ class BankAdminCreationIntegrationTest {
     private SystemAdmin systemAdmin;
     private String systemAdminToken;
 
-    @BeforeEach
-    void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context)
-                .apply(SecurityMockMvcConfigurers.springSecurity())
-                .build();
 
-        TenantContext.clear();
-        SecurityContextHolder.clearContext();
+  @BeforeEach
+  void setUp() {
+      mockMvc = MockMvcBuilders.webAppContextSetup(context)
+              .apply(SecurityMockMvcConfigurers.springSecurity())
+              .build();
 
-        try {
-            List<String> schemas = jdbcTemplate.queryForList(
-                    "SELECT DISTINCT table_schema FROM information_schema.tables WHERE table_name IN ('transaction_batch', 'alerts', 'audit_log', 'aml_case')", String.class);
-            for (String s : schemas) {
-                if (!"information_schema".equalsIgnoreCase(s) && !"pg_catalog".equalsIgnoreCase(s)) {
-                    List<String> existingTables = jdbcTemplate.queryForList(
-                            "SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_name IN ('case_note', 'escalation', 'sar_str', 'audit_log', 'notification', 'alerts', 'aml_case', 'batch_validation_error', 'financial_transaction', 'transaction_batch', 'account')",
-                            String.class, s);
-                    for (String t : existingTables) {
-                        try {
-                            jdbcTemplate.execute("TRUNCATE TABLE \"" + s + "\".\"" + t + "\" CASCADE");
-                        } catch (Exception ignored) {}
-                    }
-                }
-            }
-        } catch (Exception ignored) {}
+      TenantContext.clear();
+      SecurityContextHolder.clearContext();
 
-        userRepository.deleteAll();
+      try {
+          List<String> schemas = jdbcTemplate.queryForList(
+                  "SELECT schema_name FROM information_schema.schemata " +
+                  "WHERE schema_name LIKE 'tenant_%'",
+                  String.class
+          );
 
-        when(mailSender.createMimeMessage()).thenAnswer(invocation ->
-                new MimeMessage(Session.getInstance(new Properties()))
-        );
+          // Include public schema as well
+          schemas.add("public");
 
-        if (systemAdminRepository.count() == 0) {
-            initializer.run(null);
-        }
+          List<String> tables = List.of(
+                  "case_note",
+                  "escalation",
+                  "sar_str",
+                  "audit_log",
+                  "notification",
+                  "alert",
+                  "alerts",
+                  "aml_case",
+                  "batch_validation_error",
+                  "financial_transaction",
+                  "transaction_batch",
+                  "account"
+          );
 
-        systemAdmin = systemAdminRepository.findAll().get(0);
-        UserDetails adminDetails = customUserDetailsService.loadUserByUsername(systemAdmin.getEmail());
-        Authentication auth = new UsernamePasswordAuthenticationToken(
-                adminDetails, null, adminDetails.getAuthorities()
-        );
-        systemAdminToken = jwtTokenProvider.generateToken(auth);
+          for (String schema : schemas) {
+              for (String table : tables) {
+                  try {
+                      jdbcTemplate.execute(
+                              "TRUNCATE TABLE \"" + schema + "\".\"" + table + "\" CASCADE"
+                      );
+                  } catch (Exception ignored) {
+                      // Table may not exist in this schema
+                  }
+              }
+          }
+      } catch (Exception ignored) {
+          // Ignore cleanup failures so test setup can continue
+      }
 
-        // Clean up stale test users to ensure test idempotency
-        List<String> testEmails = List.of("admin@hdfc.com", "admin@icici.com", "admin@axis.com", "admin@random.com", "admin@inactive.com", "admin@kotak.com", "admin3@kotak.com", "admin@sbi.com");
-        testEmails.forEach(email -> userRepository.findByEmail(email).ifPresent(userRepository::delete));
+      userRepository.deleteAll();
 
-        List<String> testCodes = List.of("HDFC_ADMIN", "ICICI_ADMIN", "AXIS_ADMIN", "RANDOM_ADMIN", "INACTIVE_ADMIN", "KOTAK_ADMIN", "KOTAK_ADMIN_2", "SBI_ADMIN");
-        testCodes.forEach(code -> userRepository.findByUserCode(code).ifPresent(userRepository::delete));
-    }
+      when(mailSender.createMimeMessage()).thenAnswer(invocation ->
+              new MimeMessage(Session.getInstance(new Properties()))
+      );
+
+      if (systemAdminRepository.count() == 0) {
+          initializer.run(null);
+      }
+
+      systemAdmin = systemAdminRepository.findAll().get(0);
+      UserDetails adminDetails =
+              customUserDetailsService.loadUserByUsername(systemAdmin.getEmail());
+
+      Authentication auth = new UsernamePasswordAuthenticationToken(
+              adminDetails,
+              null,
+              adminDetails.getAuthorities()
+      );
+
+      systemAdminToken = jwtTokenProvider.generateToken(auth);
+
+      // Clean up stale test users to ensure test idempotency
+      List<String> testEmails = List.of(
+              "admin@hdfc.com",
+              "admin@icici.com",
+              "admin@axis.com",
+              "admin@random.com",
+              "admin@inactive.com",
+              "admin@kotak.com",
+              "admin3@kotak.com",
+              "admin@sbi.com"
+      );
+
+      testEmails.forEach(email ->
+              userRepository.findByEmail(email).ifPresent(userRepository::delete)
+      );
+
+      List<String> testCodes = List.of(
+              "HDFC_ADMIN",
+              "ICICI_ADMIN",
+              "AXIS_ADMIN",
+              "RANDOM_ADMIN",
+              "INACTIVE_ADMIN",
+              "KOTAK_ADMIN",
+              "KOTAK_ADMIN_2",
+              "SBI_ADMIN"
+      );
+
+      testCodes.forEach(code ->
+              userRepository.findByUserCode(code).ifPresent(userRepository::delete)
+      );
+  }
+
+
 
     private Tenant createTestTenant(String code, String name, String schema, TenantStatus status) {
         return tenantRepository.findByTenantCode(code)

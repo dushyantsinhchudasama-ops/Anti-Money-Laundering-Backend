@@ -10,9 +10,14 @@ import com.tss.aml.enums.CaseStatus;
 import com.tss.aml.security.CustomUserDetails;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import com.tss.aml.dtos.tenant.CaseInvestigationResponse;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import com.tss.aml.dtos.tenant.CaseNoteCreateRequest;
+import com.tss.aml.dtos.tenant.CaseNoteResponse;
+import java.util.List;
 
 public interface ComplianceOfficerService {
 
@@ -29,10 +34,17 @@ public interface ComplianceOfficerService {
             LocalDateTime startDate,
             LocalDateTime endDate,
             Pageable pageable,
-            CustomUserDetails currentUser
-    );
+            CustomUserDetails currentUser);
 
     AlertDetailResponse getAlertDetail(UUID alertId, CustomUserDetails currentUser);
 
     CaseResponse startInvestigation(UUID caseId, CustomUserDetails currentUser);
+
+    CaseNoteResponse createCaseNote(UUID caseId, CaseNoteCreateRequest request, CustomUserDetails currentUser);
+
+    List<CaseNoteResponse> getCaseNotes(UUID caseId, CustomUserDetails currentUser);
+
+    CaseInvestigationResponse getCaseInvestigationData(UUID caseId, Pageable pageable, CustomUserDetails currentUser);
+
+    CaseResponse closeCaseNoAction(UUID caseId, com.tss.aml.dtos.tenant.CloseCaseNoActionRequest request, CustomUserDetails currentUser);
 }

@@ -42,5 +42,8 @@ public interface AmlCaseRepository extends JpaRepository<AmlCase, UUID> {
     long countByAssignedTo_UserId(UUID userId);
 
     long countByAssignedTo_UserIdAndStatus(UUID userId, CaseStatus status);
+
+    @Query("SELECT DISTINCT c FROM AmlCase c JOIN c.alerts a WHERE a.transaction.originatorAccount.accountId = :accountId AND c.caseId <> :currentCaseId ORDER BY c.createdAt DESC")
+    List<AmlCase> findHistoricalCasesByAccountId(@Param("accountId") UUID accountId, @Param("currentCaseId") UUID currentCaseId);
 }
 

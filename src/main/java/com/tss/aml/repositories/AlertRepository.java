@@ -20,4 +20,6 @@ public interface AlertRepository extends JpaRepository<Alert, UUID>, JpaSpecific
     List<Alert> findByAlertIdIn(List<UUID> alertIds);
 
     long countByAmlCase_AssignedTo_UserId(UUID userId);
+
+    List<Alert> findByTransaction_OriginatorAccount_AccountId(UUID accountId);
 }

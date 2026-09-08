@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface AccountRepository extends JpaRepository<Account, UUID> {
     Optional<Account> findByAccountNumber(String accountNumber);
 
+    java.util.List<Account> findByAccountHolderNameIgnoreCaseAndAccountIdNot(String accountHolderName, UUID accountId);
 }

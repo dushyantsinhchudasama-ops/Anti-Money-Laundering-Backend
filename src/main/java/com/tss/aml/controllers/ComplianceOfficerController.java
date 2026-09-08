@@ -17,6 +17,11 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.tss.aml.dtos.tenant.CaseNoteCreateRequest;
+import com.tss.aml.dtos.tenant.CaseNoteResponse;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.RequestBody;
+import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -93,6 +98,48 @@ public class ComplianceOfficerController {
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         UUID alertUuid = parseUuid(alertId);
         AlertDetailResponse response = complianceOfficerService.getAlertDetail(alertUuid, currentUser);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/cases/{caseId}/notes")
+    public ResponseEntity<CaseNoteResponse> createCaseNote(
+            @PathVariable String caseId,
+            @Valid @RequestBody CaseNoteCreateRequest request,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        UUID caseUuid = parseUuid(caseId);
+        CaseNoteResponse response = complianceOfficerService.createCaseNote(caseUuid, request, currentUser);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/cases/{caseId}/notes")
+    public ResponseEntity<List<CaseNoteResponse>> getCaseNotes(
+            @PathVariable String caseId,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        UUID caseUuid = parseUuid(caseId);
+        List<CaseNoteResponse> response = complianceOfficerService.getCaseNotes(caseUuid, currentUser);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/cases/{caseId}/investigation")
+    public ResponseEntity<com.tss.aml.dtos.tenant.CaseInvestigationResponse> getCaseInvestigationData(
+            @PathVariable String caseId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        UUID caseUuid = parseUuid(caseId);
+        Pageable pageable = PageRequest.of(page, size);
+        com.tss.aml.dtos.tenant.CaseInvestigationResponse response = complianceOfficerService
+                .getCaseInvestigationData(caseUuid, pageable, currentUser);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/cases/{caseId}/close-no-action")
+    public ResponseEntity<CaseResponse> closeCaseNoAction(
+            @PathVariable String caseId,
+            @Valid @RequestBody com.tss.aml.dtos.tenant.CloseCaseNoActionRequest request,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        UUID caseUuid = parseUuid(caseId);
+        CaseResponse response = complianceOfficerService.closeCaseNoAction(caseUuid, request, currentUser);
         return ResponseEntity.ok(response);
     }
 

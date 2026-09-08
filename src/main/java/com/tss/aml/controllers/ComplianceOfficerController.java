@@ -128,8 +128,8 @@ public class ComplianceOfficerController {
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         UUID caseUuid = parseUuid(caseId);
         Pageable pageable = PageRequest.of(page, size);
-        com.tss.aml.dtos.tenant.CaseInvestigationResponse response =
-                complianceOfficerService.getCaseInvestigationData(caseUuid, pageable, currentUser);
+        com.tss.aml.dtos.tenant.CaseInvestigationResponse response = complianceOfficerService
+                .getCaseInvestigationData(caseUuid, pageable, currentUser);
         return ResponseEntity.ok(response);
     }
 

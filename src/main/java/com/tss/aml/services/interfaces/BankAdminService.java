@@ -15,4 +15,6 @@ public interface BankAdminService {
     ComplianceOfficerResponse deactivateComplianceOfficer(UUID officerId, CustomUserDetails currentUser);
     ComplianceOfficerResponse activateComplianceOfficer(UUID officerId, CustomUserDetails currentUser);
     ComplianceOfficerResponse resetComplianceOfficerPassword(UUID officerId, CustomUserDetails currentUser);
+    Page<com.tss.aml.dtos.tenant.SarStrResponse> getSarStrFilingLog(Pageable pageable, CustomUserDetails currentUser);
+    byte[] getSarStrPdfForAdmin(UUID sarStrId, CustomUserDetails currentUser);
 }

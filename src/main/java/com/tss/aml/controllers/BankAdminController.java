@@ -194,6 +194,31 @@ public class BankAdminController {
         return ResponseEntity.ok(response);
     }
 
+    // --- Institutional SAR/STR Filing Log & PDF Export ---
+
+    @GetMapping("/sar-str")
+    @PreAuthorize("hasRole('BANK_ADMIN')")
+    public ResponseEntity<Page<com.tss.aml.dtos.tenant.SarStrResponse>> getSarStrFilingLog(
+            Pageable pageable,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        validateTenantAccess(currentUser);
+        Page<com.tss.aml.dtos.tenant.SarStrResponse> logPage = bankAdminService.getSarStrFilingLog(pageable, currentUser);
+        return ResponseEntity.ok(logPage);
+    }
+
+    @GetMapping(value = "/sar-str/{sarStrId}/pdf", produces = org.springframework.http.MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize("hasRole('BANK_ADMIN')")
+    public ResponseEntity<byte[]> getSarStrPdfForAdmin(
+            @PathVariable String sarStrId,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        validateTenantAccess(currentUser);
+        UUID sarStrUuid = parseUuid(sarStrId);
+        byte[] pdfBytes = bankAdminService.getSarStrPdfForAdmin(sarStrUuid, currentUser);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"SAR-STR-" + sarStrId + ".pdf\"")
+                .body(pdfBytes);
+    }
+
     // --- Private Helper Methods ---
 
     private UUID parseUuid(String uuidStr) {

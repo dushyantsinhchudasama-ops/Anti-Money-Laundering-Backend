@@ -2,6 +2,7 @@ package com.tss.aml.entities.tenant;
 
 import com.tss.aml.entities.common.BaseEntity;
 import com.tss.aml.entities.system.Users;
+import com.tss.aml.enums.SarStrType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -35,6 +36,10 @@ public class SarStr extends BaseEntity {
     @JoinColumn(name = "case_id", nullable = false, unique = true)
     private AmlCase amlCase;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "report_type", length = 10)
+    private SarStrType reportType;
+
     @Column(name = "typology_category", nullable = false, length = 100)
     private String typologyCategory;
 
@@ -52,6 +57,10 @@ public class SarStr extends BaseEntity {
 
     @Column(name = "pdf_reference")
     private String pdfReference;
+
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.BINARY)
+    @Column(name = "pdf_content", columnDefinition = "BYTEA")
+    private byte[] pdfContent;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "filed_by")

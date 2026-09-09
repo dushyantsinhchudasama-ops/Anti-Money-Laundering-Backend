@@ -143,6 +143,36 @@ public class ComplianceOfficerController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/cases/{caseId}/sar-str/preview")
+    public ResponseEntity<com.tss.aml.dtos.tenant.SarStrPreviewResponse> getSarStrPreview(
+            @PathVariable String caseId,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        UUID caseUuid = parseUuid(caseId);
+        com.tss.aml.dtos.tenant.SarStrPreviewResponse response = complianceOfficerService.getSarStrPreview(caseUuid, currentUser);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/cases/{caseId}/sar-str")
+    public ResponseEntity<com.tss.aml.dtos.tenant.SarStrResponse> fileSarStr(
+            @PathVariable String caseId,
+            @Valid @RequestBody com.tss.aml.dtos.tenant.SarStrFilingRequest request,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        UUID caseUuid = parseUuid(caseId);
+        com.tss.aml.dtos.tenant.SarStrResponse response = complianceOfficerService.fileSarStr(caseUuid, request, currentUser);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping(value = "/cases/{caseId}/sar-str/pdf", produces = org.springframework.http.MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> getSarStrPdf(
+            @PathVariable String caseId,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        UUID caseUuid = parseUuid(caseId);
+        byte[] pdfBytes = complianceOfficerService.getSarStrPdf(caseUuid, currentUser);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"SAR-STR-" + caseId + ".pdf\"")
+                .body(pdfBytes);
+    }
+
     private UUID parseUuid(String uuidStr) {
         try {
             return UUID.fromString(uuidStr);

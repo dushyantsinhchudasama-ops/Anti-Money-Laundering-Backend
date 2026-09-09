@@ -47,4 +47,10 @@ public interface ComplianceOfficerService {
     CaseInvestigationResponse getCaseInvestigationData(UUID caseId, Pageable pageable, CustomUserDetails currentUser);
 
     CaseResponse closeCaseNoAction(UUID caseId, com.tss.aml.dtos.tenant.CloseCaseNoActionRequest request, CustomUserDetails currentUser);
+
+    com.tss.aml.dtos.tenant.SarStrPreviewResponse getSarStrPreview(UUID caseId, CustomUserDetails currentUser);
+
+    com.tss.aml.dtos.tenant.SarStrResponse fileSarStr(UUID caseId, com.tss.aml.dtos.tenant.SarStrFilingRequest request, CustomUserDetails currentUser);
+
+    byte[] getSarStrPdf(UUID caseId, CustomUserDetails currentUser);
 }

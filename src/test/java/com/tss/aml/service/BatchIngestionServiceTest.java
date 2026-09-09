@@ -75,12 +75,49 @@ class BatchIngestionServiceTest {
 
         when(accountRepository.findByAccountNumber(any())).thenReturn(Optional.empty());
         when(accountRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        when(userRepository.findById(any())).thenAnswer(inv -> {
+            UUID id = inv.getArgument(0);
+            return Optional.of(com.tss.aml.entities.system.Users.builder()
+                    .userId(id != null ? id : UUID.randomUUID())
+                    .email("admin@bank.com")
+                    .build());
+        });
+        when(userRepository.findByEmail(any())).thenAnswer(inv -> Optional.of(com.tss.aml.entities.system.Users.builder()
+                .userId(UUID.randomUUID())
+                .email(inv.getArgument(0))
+                .tenant(com.tss.aml.entities.system.Tenant.builder().tenantId(UUID.randomUUID()).build())
+                .build()));
+
+        when(userRepository.findById(any())).thenAnswer(inv -> {
+            UUID id = inv.getArgument(0);
+            return Optional.of(com.tss.aml.entities.system.Users.builder()
+                    .userId(id != null ? id : UUID.randomUUID())
+                    .email("admin@bank.com")
+                    .tenant(com.tss.aml.entities.system.Tenant.builder().tenantId(UUID.randomUUID()).build())
+                    .build());
+        });
+
+        when(ruleRepository.findActiveRulesByTenantId(any())).thenReturn(List.of(
+                com.tss.aml.entities.system.Rule.builder()
+                        .ruleId(UUID.randomUUID())
+                        .ruleCode("RULE_TEST_01")
+                        .status(com.tss.aml.enums.RuleStatus.ACTIVE)
+                        .build()
+        ));
+
+        when(ruleEngineService.evaluateBatch(any(), any())).thenReturn(Collections.emptyList());
     }
 
     @Test
     void testRejectedBatch_enforcesAllOrNothingPolicy_andDoesNotSaveTransactions() {
         MockMultipartFile file = new MockMultipartFile("file", "invalid.xlsx", "text/plain", "data".getBytes());
-        Users user = Users.builder().userId(UUID.randomUUID()).email("admin@bank.com").build();
+        com.tss.aml.security.CustomUserDetails user = com.tss.aml.security.CustomUserDetails.builder()
+                .userId(UUID.randomUUID())
+                .username("admin@bank.com")
+                .tenantId(UUID.randomUUID())
+                .tenantCode("BANK001")
+                .build();
 
         BatchValidationErrorDto error = new BatchValidationErrorDto(2, "Amount", "Amount must be greater than zero.");
         BatchValidationResult<ParsedTransactionRowDto> invalidResult = BatchValidationResult.<ParsedTransactionRowDto>builder()
@@ -107,7 +144,12 @@ class BatchIngestionServiceTest {
     @Test
     void testSuccessfulBatchUpload_runsRuleEngine_andUpdatesStatus() {
         MockMultipartFile file = new MockMultipartFile("file", "valid.xlsx", "text/plain", "data".getBytes());
-        Users user = Users.builder().userId(UUID.randomUUID()).email("admin@bank.com").build();
+        com.tss.aml.security.CustomUserDetails user = com.tss.aml.security.CustomUserDetails.builder()
+                .userId(UUID.randomUUID())
+                .username("admin@bank.com")
+                .tenantId(UUID.randomUUID())
+                .tenantCode("BANK001")
+                .build();
 
         ParsedTransactionRowDto row = ParsedTransactionRowDto.builder()
                 .txnNo("TXN-100")

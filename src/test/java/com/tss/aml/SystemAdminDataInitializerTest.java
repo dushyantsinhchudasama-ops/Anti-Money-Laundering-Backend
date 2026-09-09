@@ -35,9 +35,6 @@ class SystemAdminDataInitializerTest {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private com.tss.aml.repositories.UserRepository userRepository;
-
-    @Autowired
     private com.tss.aml.repositories.RuleVersionHistoryRepository ruleVersionHistoryRepository;
 
     @Autowired
@@ -55,22 +52,30 @@ class SystemAdminDataInitializerTest {
     @Autowired
     private com.tss.aml.repositories.AlertRepository alertRepository;
 
+    @Autowired
+    private com.tss.aml.repositories.AuditLogRepository auditLogRepository;
+
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     @BeforeEach
     void setUp() {
-        tenantRepository.findAll().forEach(t -> {
-            if (t.getSchemaName() != null) {
-                try {
-                    com.tss.aml.tenant.TenantContext.setCurrentTenant(t.getSchemaName());
-                    alertRepository.deleteAll();
-                    amlCaseRepository.deleteAll();
-                    financialTransactionRepository.deleteAll();
-                    transactionBatchRepository.deleteAll();
-                } catch (Exception ignored) {
-                } finally {
-                    com.tss.aml.tenant.TenantContext.clear();
+        try {
+            java.util.List<String> schemas = jdbcTemplate.queryForList(
+                    "SELECT DISTINCT table_schema FROM information_schema.tables WHERE table_name IN ('transaction_batch', 'alerts', 'audit_log', 'aml_case')", String.class);
+            for (String s : schemas) {
+                if (!"information_schema".equalsIgnoreCase(s) && !"pg_catalog".equalsIgnoreCase(s)) {
+                    java.util.List<String> existingTables = jdbcTemplate.queryForList(
+                            "SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_name IN ('case_note', 'escalation', 'sar_str', 'audit_log', 'notification', 'alerts', 'aml_case', 'batch_validation_error', 'financial_transaction', 'transaction_batch', 'account')",
+                            String.class, s);
+                    for (String t : existingTables) {
+                        try {
+                            jdbcTemplate.execute("TRUNCATE TABLE \"" + s + "\".\"" + t + "\" CASCADE");
+                        } catch (Exception ignored) {}
+                    }
                 }
             }
-        });
+        } catch (Exception ignored) {}
         ruleVersionHistoryRepository.deleteAll();
         ruleRepository.deleteAll();
         userRepository.deleteAll();

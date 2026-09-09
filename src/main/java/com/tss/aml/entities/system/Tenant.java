@@ -1,5 +1,6 @@
 package com.tss.aml.entities.system;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.tss.aml.entities.common.BaseEntity;
 import com.tss.aml.enums.TenantStatus;
 import jakarta.persistence.*;
@@ -50,11 +51,13 @@ public class Tenant extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "onboarded_by_admin_id", nullable = false)
+    @JsonIgnore
     private SystemAdmin onboardedByAdmin;
 
     // Active/Draft/Paused rules assigned to this bank (public-schema mapping only;
     // do NOT relate this to tenant-schema entities like TransactionBatch/Alert/Case).
     @OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<BankRuleAssignment> ruleAssignments;
 
     @PrePersist

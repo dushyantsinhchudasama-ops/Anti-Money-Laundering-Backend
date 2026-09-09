@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+@CrossOrigin
 @RestController
 @RequestMapping("/api/v1/admin/tenants")
 @RequiredArgsConstructor
@@ -27,8 +28,8 @@ public class TenantController {
     }
 
     @GetMapping
-    public ResponseEntity<java.util.List<com.tss.aml.entities.system.Tenant>> getAllTenants() {
-        return ResponseEntity.ok(tenantService.getAllTenants());
+    public ResponseEntity<java.util.List<CreateTenantResponse>> getAllTenants() {
+        return ResponseEntity.ok(tenantService.getAllTenantResponses());
     }
 
 

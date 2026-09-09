@@ -30,6 +30,12 @@ import com.tss.aml.tenant.TenantContext;
 
 import com.tss.aml.services.EmailService;
 
+import com.tss.aml.entities.tenant.Account;
+import com.tss.aml.entities.tenant.Alert;
+import com.tss.aml.entities.tenant.SarStr;
+import com.tss.aml.repositories.SarStrRepository;
+import com.tss.aml.dtos.tenant.SarStrResponse;
+
 @RequiredArgsConstructor
 @Service
 @Slf4j
@@ -39,6 +45,7 @@ public class BankAdminServiceImpl implements BankAdminService {
     private final PasswordEncoder passwordEncoder;
     private final AmlCaseRepository amlCaseRepository;
     private final EmailService emailService;
+    private final SarStrRepository sarStrRepository;
 
     @Override
     @Transactional
@@ -289,4 +296,54 @@ public class BankAdminServiceImpl implements BankAdminService {
         return "TmpOff@" + UUID.randomUUID().toString().substring(0, 8);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<SarStrResponse> getSarStrFilingLog(Pageable pageable, CustomUserDetails currentUser) {
+        Page<SarStr> filings = sarStrRepository.findAll(pageable);
+        return filings.map(this::mapToSarStrResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] getSarStrPdfForAdmin(UUID sarStrId, CustomUserDetails currentUser) {
+        SarStr sarStr = sarStrRepository.findById(sarStrId)
+                .orElseThrow(() -> new ResourceNotFoundException("SAR/STR report not found with ID " + sarStrId));
+
+        if (sarStr.getPdfContent() == null) {
+            throw new ResourceNotFoundException("PDF content not found for SAR/STR report " + sarStr.getReferenceNumber());
+        }
+
+        return sarStr.getPdfContent();
+    }
+
+    private SarStrResponse mapToSarStrResponse(SarStr sarStr) {
+        Account account = null;
+        if (sarStr.getAmlCase() != null && sarStr.getAmlCase().getAlerts() != null) {
+            for (Alert alert : sarStr.getAmlCase().getAlerts()) {
+                if (alert.getTransaction() != null && alert.getTransaction().getOriginatorAccount() != null) {
+                    account = alert.getTransaction().getOriginatorAccount();
+                    break;
+                }
+            }
+        }
+
+        return SarStrResponse.builder()
+                .sarStrId(sarStr.getSarStrId())
+                .caseId(sarStr.getAmlCase() != null ? sarStr.getAmlCase().getCaseId() : null)
+                .caseCode(sarStr.getAmlCase() != null ? sarStr.getAmlCase().getCaseCode() : null)
+                .reportType(sarStr.getReportType())
+                .typologyCategory(sarStr.getTypologyCategory())
+                .descriptionOfActivity(sarStr.getDescriptionOfActivity())
+                .basisForSuspicion(sarStr.getBasisForSuspicion())
+                .supportingEvidence(sarStr.getSupportingEvidence())
+                .referenceNumber(sarStr.getReferenceNumber())
+                .pdfReference(sarStr.getPdfReference())
+                .filedById(sarStr.getFiledBy() != null ? sarStr.getFiledBy().getUserId() : null)
+                .filedByName(sarStr.getFiledBy() != null ? sarStr.getFiledBy().getFirstName() + " " + sarStr.getFiledBy().getLastName() : null)
+                .filedByEmail(sarStr.getFiledBy() != null ? sarStr.getFiledBy().getEmail() : null)
+                .submittedAt(sarStr.getSubmittedAt())
+                .accountNumber(account != null ? account.getAccountNumber() : null)
+                .accountHolderName(account != null ? account.getAccountHolderName() : null)
+                .build();
+    }
 }

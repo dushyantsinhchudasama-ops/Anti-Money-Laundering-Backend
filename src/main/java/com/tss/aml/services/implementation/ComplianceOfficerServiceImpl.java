@@ -41,11 +41,18 @@ import com.tss.aml.dtos.tenant.CaseNoteResponse;
 import com.tss.aml.entities.tenant.CaseNote;
 import com.tss.aml.repositories.CaseNoteRepository;
 import com.tss.aml.dtos.tenant.CaseInvestigationResponse;
-import com.tss.aml.entities.tenant.Account;
 import com.tss.aml.repositories.AccountRepository;
 import com.tss.aml.repositories.FinancialTransactionRepository;
-import org.springframework.data.domain.PageImpl;
 import java.util.Map;
+import com.tss.aml.entities.tenant.Account;
+import com.tss.aml.entities.tenant.SarStr;
+import com.tss.aml.enums.FiuTypologyCategory;
+import com.tss.aml.enums.SarStrType;
+import com.tss.aml.repositories.SarStrRepository;
+import com.tss.aml.dtos.tenant.SarStrFilingRequest;
+import com.tss.aml.dtos.tenant.SarStrPreviewResponse;
+import com.tss.aml.dtos.tenant.SarStrResponse;
+import com.tss.aml.utils.SarStrPdfGenerator;
 
 @Service
 @RequiredArgsConstructor
@@ -59,6 +66,7 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
     private final CaseNoteRepository caseNoteRepository;
     private final FinancialTransactionRepository financialTransactionRepository;
     private final AccountRepository accountRepository;
+    private final SarStrRepository sarStrRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -639,5 +647,230 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
         log.info("Compliance Officer '{}' closed Case '{}' as CLOSED_NO_ACTION", currentUserEntity.getEmail(), amlCase.getCaseCode());
 
         return mapToCaseResponse(amlCase);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SarStrPreviewResponse getSarStrPreview(UUID caseId, CustomUserDetails currentUser) {
+        AmlCase amlCase = amlCaseRepository.findById(caseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Case with ID " + caseId + " not found"));
+
+        if (amlCase.getAssignedTo() == null || !amlCase.getAssignedTo().getUserId().equals(currentUser.getUserId())) {
+            throw new AccessDeniedException("Access denied: Case is not assigned to you.");
+        }
+
+        if (amlCase.getStatus() != CaseStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Cannot preview SAR/STR for case with status: " + amlCase.getStatus() + ". Case must be IN_PROGRESS.");
+        }
+
+        Account account = null;
+        List<SarStrPreviewResponse.TransactionSummaryDto> txns = new ArrayList<>();
+        List<SarStrPreviewResponse.AlertSummaryDto> alerts = new ArrayList<>();
+
+        if (amlCase.getAlerts() != null) {
+            for (Alert alert : amlCase.getAlerts()) {
+                if (alert.getRule() != null) {
+                    alerts.add(SarStrPreviewResponse.AlertSummaryDto.builder()
+                            .alertId(alert.getAlertId())
+                            .alertCode(alert.getAlertCode())
+                            .severity(alert.getSeverity() != null ? alert.getSeverity().name() : null)
+                            .ruleCode(alert.getRule().getRuleCode())
+                            .ruleName(alert.getRule().getRuleName())
+                            .build());
+                }
+
+                FinancialTransaction txn = alert.getTransaction();
+                if (txn != null) {
+                    if (account == null && txn.getOriginatorAccount() != null) {
+                        account = txn.getOriginatorAccount();
+                    }
+                    txns.add(SarStrPreviewResponse.TransactionSummaryDto.builder()
+                            .transactionId(txn.getTransactionId())
+                            .txnNo(txn.getTxnNo())
+                            .amount(txn.getAmount())
+                            .currency(txn.getCurrency())
+                            .txnType(txn.getTxnType() != null ? txn.getTxnType().name() : null)
+                            .direction(txn.getDirection() != null ? txn.getDirection().name() : null)
+                            .counterpartyName(txn.getCounterpartyName())
+                            .counterpartyAccountNo(txn.getCounterpartyAccountNo())
+                            .counterpartyBank(txn.getCounterpartyBank())
+                            .txnTimestamp(txn.getTxnTimestamp())
+                            .build());
+                }
+            }
+        }
+
+        List<String> reportTypes = List.of(SarStrType.SAR.name(), SarStrType.STR.name());
+        List<String> typologies = List.of(
+                FiuTypologyCategory.STRUCTURING.name(),
+                FiuTypologyCategory.LAYERING.name(),
+                FiuTypologyCategory.PEP_TRANSACTION.name(),
+                FiuTypologyCategory.FRAUD_RELATED_ML.name(),
+                FiuTypologyCategory.VELOCITY_CHECK.name(),
+                FiuTypologyCategory.GEOGRAPHIC_RISK.name(),
+                FiuTypologyCategory.RAPID_PASS_THROUGH.name(),
+                FiuTypologyCategory.DORMANT_ACCOUNT.name(),
+                FiuTypologyCategory.UTURN_TRANSACTION.name(),
+                FiuTypologyCategory.CIRCULAR_LOOPING.name(),
+                FiuTypologyCategory.OTHER_SUSPICIOUS_ACTIVITY.name()
+        );
+
+        return SarStrPreviewResponse.builder()
+                .caseId(amlCase.getCaseId())
+                .caseCode(amlCase.getCaseCode())
+                .caseStatus(amlCase.getStatus())
+                .assignedToEmail(currentUser.getUsername())
+                .accountId(account != null ? account.getAccountId() : null)
+                .accountNumber(account != null ? account.getAccountNumber() : null)
+                .accountHolderName(account != null ? account.getAccountHolderName() : null)
+                .accountType(account != null && account.getAccountType() != null ? account.getAccountType().name() : null)
+                .bankName(account != null ? account.getBankName() : null)
+                .countryCode(account != null ? account.getCountryCode() : null)
+                .riskRating(account != null && account.getRiskRating() != null ? account.getRiskRating().name() : null)
+                .transactions(txns)
+                .triggeredAlerts(alerts)
+                .supportedReportTypes(reportTypes)
+                .supportedTypologyCategories(typologies)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public SarStrResponse fileSarStr(UUID caseId, SarStrFilingRequest request, CustomUserDetails currentUser) {
+        AmlCase amlCase = amlCaseRepository.findById(caseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Case with ID " + caseId + " not found"));
+
+        if (amlCase.getAssignedTo() == null || !amlCase.getAssignedTo().getUserId().equals(currentUser.getUserId())) {
+            throw new AccessDeniedException("Access denied: Case is not assigned to you.");
+        }
+
+        if (amlCase.getStatus() == CaseStatus.CLOSED_SAR_FILED || amlCase.getStatus() == CaseStatus.CLOSED_NO_ACTION) {
+            throw new IllegalStateException("Cannot file SAR/STR for closed case with status: " + amlCase.getStatus());
+        }
+
+        if (amlCase.getStatus() != CaseStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Cannot file SAR/STR for case with status: " + amlCase.getStatus() + ". Case must be IN_PROGRESS.");
+        }
+
+        if (!caseNoteRepository.existsByAmlCase_CaseId(caseId)) {
+            throw new IllegalArgumentException("Case must contain at least one investigation note before SAR/STR filing.");
+        }
+
+        if (sarStrRepository.existsByAmlCase_CaseId(caseId)) {
+            throw new IllegalStateException("SAR/STR report has already been filed for case " + amlCase.getCaseCode());
+        }
+
+        if (request == null || request.getReportType() == null) {
+            throw new IllegalArgumentException("Report type (SAR/STR) is required");
+        }
+
+        if (request.getTypologyCategory() == null) {
+            throw new IllegalArgumentException("Typology category is required");
+        }
+
+        if (request.getDescriptionOfActivity() == null || request.getDescriptionOfActivity().trim().isEmpty()) {
+            throw new IllegalArgumentException("Description of activity is required");
+        }
+
+        if (request.getBasisForSuspicion() == null || request.getBasisForSuspicion().trim().isEmpty()) {
+            throw new IllegalArgumentException("Basis for suspicion is required");
+        }
+
+        if (request.getSupportingEvidence() == null || request.getSupportingEvidence().trim().isEmpty()) {
+            throw new IllegalArgumentException("Supporting evidence is required");
+        }
+
+        Users currentUserEntity = userRepository.findById(currentUser.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Logged-in user not found: " + currentUser.getUserId()));
+
+        String refNo = "SAR-2026-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String pdfRef = refNo + ".pdf";
+
+        SarStr sarStr = SarStr.builder()
+                .amlCase(amlCase)
+                .reportType(request.getReportType())
+                .typologyCategory(request.getTypologyCategory().name())
+                .descriptionOfActivity(request.getDescriptionOfActivity().trim())
+                .basisForSuspicion(request.getBasisForSuspicion().trim())
+                .supportingEvidence(request.getSupportingEvidence().trim())
+                .referenceNumber(refNo)
+                .pdfReference(pdfRef)
+                .filedBy(currentUserEntity)
+                .submittedAt(LocalDateTime.now())
+                .build();
+
+        byte[] pdfBytes = SarStrPdfGenerator.generateSarStrPdf(sarStr);
+        sarStr.setPdfContent(pdfBytes);
+
+        SarStr savedSarStr = sarStrRepository.save(sarStr);
+
+        amlCase.setStatus(CaseStatus.CLOSED_SAR_FILED);
+        amlCase.setClosedAt(LocalDateTime.now());
+        amlCaseRepository.save(amlCase);
+
+        AuditLog auditLog = AuditLog.builder()
+                .actor(currentUserEntity)
+                .action("SAR_STR_FILED")
+                .entityType("SarStr")
+                .entityId(savedSarStr.getSarStrId().toString())
+                .details("Compliance Officer " + currentUserEntity.getEmail() + " filed " + savedSarStr.getReportType() + " report " + refNo + " for case " + amlCase.getCaseCode() + ". Typology: " + savedSarStr.getTypologyCategory())
+                .build();
+        auditLogRepository.save(auditLog);
+
+        log.info("Compliance Officer '{}' filed {} report '{}' for Case '{}'",
+                currentUserEntity.getEmail(), savedSarStr.getReportType(), refNo, amlCase.getCaseCode());
+
+        return mapToSarStrResponse(savedSarStr);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] getSarStrPdf(UUID caseId, CustomUserDetails currentUser) {
+        AmlCase amlCase = amlCaseRepository.findById(caseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Case with ID " + caseId + " not found"));
+
+        if (amlCase.getAssignedTo() == null || !amlCase.getAssignedTo().getUserId().equals(currentUser.getUserId())) {
+            throw new AccessDeniedException("Access denied: Case is not assigned to you.");
+        }
+
+        SarStr sarStr = sarStrRepository.findByAmlCase_CaseId(caseId)
+                .orElseThrow(() -> new ResourceNotFoundException("SAR/STR report not found for case ID " + caseId));
+
+        if (sarStr.getPdfContent() == null) {
+            throw new ResourceNotFoundException("PDF content not found for SAR/STR report " + sarStr.getReferenceNumber());
+        }
+
+        return sarStr.getPdfContent();
+    }
+
+    private SarStrResponse mapToSarStrResponse(SarStr sarStr) {
+        Account account = null;
+        if (sarStr.getAmlCase() != null && sarStr.getAmlCase().getAlerts() != null) {
+            for (Alert alert : sarStr.getAmlCase().getAlerts()) {
+                if (alert.getTransaction() != null && alert.getTransaction().getOriginatorAccount() != null) {
+                    account = alert.getTransaction().getOriginatorAccount();
+                    break;
+                }
+            }
+        }
+
+        return SarStrResponse.builder()
+                .sarStrId(sarStr.getSarStrId())
+                .caseId(sarStr.getAmlCase() != null ? sarStr.getAmlCase().getCaseId() : null)
+                .caseCode(sarStr.getAmlCase() != null ? sarStr.getAmlCase().getCaseCode() : null)
+                .reportType(sarStr.getReportType())
+                .typologyCategory(sarStr.getTypologyCategory())
+                .descriptionOfActivity(sarStr.getDescriptionOfActivity())
+                .basisForSuspicion(sarStr.getBasisForSuspicion())
+                .supportingEvidence(sarStr.getSupportingEvidence())
+                .referenceNumber(sarStr.getReferenceNumber())
+                .pdfReference(sarStr.getPdfReference())
+                .filedById(sarStr.getFiledBy() != null ? sarStr.getFiledBy().getUserId() : null)
+                .filedByName(sarStr.getFiledBy() != null ? sarStr.getFiledBy().getFirstName() + " " + sarStr.getFiledBy().getLastName() : null)
+                .filedByEmail(sarStr.getFiledBy() != null ? sarStr.getFiledBy().getEmail() : null)
+                .submittedAt(sarStr.getSubmittedAt())
+                .accountNumber(account != null ? account.getAccountNumber() : null)
+                .accountHolderName(account != null ? account.getAccountHolderName() : null)
+                .build();
     }
 }

@@ -27,7 +27,7 @@ public class BatchValidationService {
 
     public BatchValidationResult<ParsedTransactionRowDto> validateExcelBatch(MultipartFile file) {
         List<BatchValidationErrorDto> errors = new ArrayList<>();
-        List<ParsedTransactionRowDto> parsedRows = new ArrayList<>();
+        Map<String, ParsedTransactionRowDto> parsedRows = new HashMap<>();
 
         if (file == null || file.isEmpty()) {
             errors.add(BatchValidationErrorDto.builder()
@@ -88,7 +88,7 @@ public class BatchValidationService {
         return BatchValidationResult.<ParsedTransactionRowDto>builder()
                 .valid(isValid)
                 .errors(errors)
-                .parsedData(isValid ? parsedRows : Collections.emptyList())
+                .parsedData(isValid ? parsedRows.values().stream().toList() : Collections.emptyList())
                 .build();
     }
 
@@ -125,7 +125,7 @@ public class BatchValidationService {
     }
 
     private void validateAndParseRow(Row row, int displayRowNum, Map<String, Integer> headerMap,
-                                     List<BatchValidationErrorDto> errors, List<ParsedTransactionRowDto> parsedRows) {
+                                     List<BatchValidationErrorDto> errors, Map<String, ParsedTransactionRowDto> parsedRows) {
 
         String txnNo = getCellValue(row, headerMap.get("TxnNo"));
         String origAcc = getCellValue(row, headerMap.get("OriginatorAccountNo"));
@@ -195,8 +195,9 @@ public class BatchValidationService {
             }
         }
 
-        if (rowValid) {
-            parsedRows.add(ParsedTransactionRowDto.builder()
+        if (rowValid && parsedRows.get(txnNo) == null) {
+            parsedRows.put(txnNo,
+                    ParsedTransactionRowDto.builder()
                     .txnNo(txnNo)
                     .originatorAccountNo(origAcc)
                     .originatorName(origName)

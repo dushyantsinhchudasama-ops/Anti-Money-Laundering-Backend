@@ -8,7 +8,8 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Getter @Setter
+@Getter
+@Setter
 @Builder
 public class ComplianceOfficerResponse {
     private UUID userId;

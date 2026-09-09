@@ -31,7 +31,7 @@ public class SystemAdminController {
     @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<CreateRuleResponse> updateRule(
             @PathVariable("ruleId") UUID ruleId,
-            @RequestBody UpdateRuleRequest request
+            @Valid @RequestBody UpdateRuleRequest request
     ) {
         CreateRuleResponse response = systemAdminService.updateRule(ruleId, request);
         return new ResponseEntity<>(response, HttpStatus.OK);

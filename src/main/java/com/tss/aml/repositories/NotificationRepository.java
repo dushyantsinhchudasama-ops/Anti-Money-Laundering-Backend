@@ -7,11 +7,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
     List<Notification> findByRecipient_UserIdOrderByCreatedAtDesc(UUID recipientId);
     Page<Notification> findByRecipient_UserId(UUID recipientId, Pageable pageable);
+    Page<Notification> findByRecipient_UserIdOrderByCreatedAtDesc(UUID recipientId, Pageable pageable);
+    Page<Notification> findByRecipient_UserIdAndIsReadFalseOrderByCreatedAtDesc(UUID recipientId, Pageable pageable);
+    Optional<Notification> findByNotificationIdAndRecipient_UserId(UUID notificationId, UUID recipientId);
+    boolean existsByRecipient_UserIdAndSarStr_SarStrId(UUID recipientId, UUID sarStrId);
     long countByRecipient_UserIdAndIsReadFalse(UUID recipientId);
 }

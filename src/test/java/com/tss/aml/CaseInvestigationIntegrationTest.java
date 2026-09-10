@@ -125,6 +125,9 @@ public class CaseInvestigationIntegrationTest {
     @Autowired
     private TenantMigrationService tenantMigrationService;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     private Users hdfcBankAdmin;
     private Users hdfcCoA;
     private Users hdfcCoB;
@@ -209,7 +212,7 @@ public class CaseInvestigationIntegrationTest {
         accountRepository.deleteAll();
         TenantContext.clear();
 
-        userRepository.deleteAll();
+        jdbcTemplate.execute("TRUNCATE TABLE public.users CASCADE");
 
         // Create Users
         hdfcBankAdmin = userRepository.save(Users.builder()

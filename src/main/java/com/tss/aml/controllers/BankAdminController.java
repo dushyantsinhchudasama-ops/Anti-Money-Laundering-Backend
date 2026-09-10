@@ -27,10 +27,14 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import com.tss.aml.dtos.tenant.SarStrResponse;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
+import com.tss.aml.dtos.audit.AuditLogResponseDto;
+import com.tss.aml.services.interfaces.AuditLogQueryService;
 
 @CrossOrigin
 @RequiredArgsConstructor
@@ -40,6 +44,7 @@ public class BankAdminController {
     private final BankAdminService bankAdminService;
     private final AlertService alertService;
     private final CaseService caseService;
+    private final AuditLogQueryService auditLogQueryService;
 
     // --- User Management (Compliance Officers) ---
 
@@ -201,7 +206,7 @@ public class BankAdminController {
 
     @GetMapping("/sar-str")
     @PreAuthorize("hasRole('BANK_ADMIN')")
-    public ResponseEntity<Page<com.tss.aml.dtos.tenant.SarStrResponse>> getSarStrFilingLog(
+    public ResponseEntity<Page<SarStrResponse>> getSarStrFilingLog(
             Pageable pageable,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         validateTenantAccess(currentUser);
@@ -222,6 +227,24 @@ public class BankAdminController {
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"SAR-STR-" + sarStrId + ".pdf\"")
                 .body(pdfBytes);
+    }
+
+    // --- Audit Trail Queries ---
+
+    @GetMapping("/audit-logs")
+    @PreAuthorize("hasRole('BANK_ADMIN')")
+    public ResponseEntity<Page<AuditLogResponseDto>> getTenantAuditLogs(
+            @RequestParam(required = false) UUID actorId,
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            Pageable pageable,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        validateTenantAccess(currentUser);
+        Page<AuditLogResponseDto> logs = auditLogQueryService.getTenantAuditLogs(actorId, entityType, action, startDate,
+                endDate, pageable, currentUser);
+        return ResponseEntity.ok(logs);
     }
 
     // --- Private Helper Methods ---

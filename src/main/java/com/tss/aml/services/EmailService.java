@@ -23,4 +23,13 @@ public interface EmailService {
             String firstName,
             String temporaryPassword
     );
+
+    void sendSarStrFilingEmail(
+            String adminEmail,
+            String adminFirstName,
+            String reportType,
+            String referenceNumber,
+            String caseCode,
+            String officerName
+    );
 }

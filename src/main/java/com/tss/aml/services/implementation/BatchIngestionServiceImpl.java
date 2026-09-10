@@ -14,6 +14,8 @@ import com.tss.aml.exceptions.base.ResourceNotFoundException;
 import com.tss.aml.repositories.*;
 import com.tss.aml.ruleengine.RuleEngineService;
 import com.tss.aml.security.CustomUserDetails;
+import com.tss.aml.entities.tenant.AuditLog;
+import com.tss.aml.repositories.AuditLogRepository;
 import com.tss.aml.services.BatchValidationService;
 import com.tss.aml.services.interfaces.BatchIngestionService;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +45,7 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
     private final RuleRepository ruleRepository;
     private final UserRepository userRepository;
     private final RuleEngineService ruleEngineService;
+    private final AuditLogRepository auditLogRepository;
 
     @Transactional
     @Override
@@ -92,6 +95,17 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
 
             rejectedBatch.setValidationErrors(errorEntities);
             TransactionBatch savedRejected = batchRepository.save(rejectedBatch);
+
+            if (auditLogRepository != null && uploadingUser != null) {
+                AuditLog auditLog = AuditLog.builder()
+                        .actor(uploadingUser)
+                        .action("BATCH_REJECTED")
+                        .entityType("BATCH")
+                        .entityId(savedRejected.getBatchId().toString())
+                        .details("Batch file '" + fileName + "' rejected due to " + validationResult.getErrors().size() + " validation errors.")
+                        .build();
+                auditLogRepository.save(auditLog);
+            }
 
             return BatchUploadResponseDto.builder()
                     .batchId(savedRejected.getBatchId())
@@ -170,6 +184,17 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
         savedBatch.setProcessedAt(LocalDateTime.now());
 
         TransactionBatch updatedBatch = batchRepository.save(savedBatch);
+
+        if (auditLogRepository != null && uploadingUser != null) {
+            AuditLog auditLog = AuditLog.builder()
+                    .actor(uploadingUser)
+                    .action("BATCH_PROCESSED")
+                    .entityType("BATCH")
+                    .entityId(updatedBatch.getBatchId().toString())
+                    .details("Batch file '" + fileName + "' processed with " + updatedBatch.getTotalRecords() + " records and " + alertsCount + " alerts generated.")
+                    .build();
+            auditLogRepository.save(auditLog);
+        }
 
         return BatchUploadResponseDto.builder()
                 .batchId(updatedBatch.getBatchId())

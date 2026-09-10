@@ -1,0 +1,61 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------------< com.tss:aml >-----------------------------
+[INFO] Building  0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- kotlin:2.3.10:kapt (default-kapt) @ aml ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ aml ---
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] Copying 7 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- kotlin:2.3.10:compile (default-compile) @ aml ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ aml ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- kotlin:2.3.10:compile (compile) @ aml ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (compile) @ aml ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- kotlin:2.3.10:test-kapt (default-test-kapt) @ aml ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ aml ---
+[INFO] skip non existing resourceDirectory D:\Downloads\Anti-Money-Laundering-Backend (1)\Anti-Money-Laundering-Backend\src\test\resources
+[INFO] 
+[INFO] --- kotlin:2.3.10:test-compile (default-test-compile) @ aml ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ aml ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- kotlin:2.3.10:test-compile (test-compile) @ aml ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (testCompile) @ aml ---
+[INFO] Recompiling the module because of added or removed source files.
+[INFO] Compiling 44 source files with javac [debug parameters release 17] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] /D:/Downloads/Anti-Money-Laundering-Backend (1)/Anti-Money-Laundering-Backend/src/test/java/com/tss/aml/AuditTrailIntegrationTest.java: D:\Downloads\Anti-Money-Laundering-Backend (1)\Anti-Money-Laundering-Backend\src\test\java\com\tss\aml\AuditTrailIntegrationTest.java uses or overrides a deprecated API.
+[INFO] /D:/Downloads/Anti-Money-Laundering-Backend (1)/Anti-Money-Laundering-Backend/src/test/java/com/tss/aml/AuditTrailIntegrationTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] /D:/Downloads/Anti-Money-Laundering-Backend (1)/Anti-Money-Laundering-Backend/src/test/java/com/tss/aml/BankAdminManagementIntegrationTest.java: Some input files use unchecked or unsafe operations.
+[INFO] /D:/Downloads/Anti-Money-Laundering-Backend (1)/Anti-Money-Laundering-Backend/src/test/java/com/tss/aml/BankAdminManagementIntegrationTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  8.701 s
+[INFO] Finished at: 2026-09-10T13:36:12+05:30
+[INFO] ------------------------------------------------------------------------

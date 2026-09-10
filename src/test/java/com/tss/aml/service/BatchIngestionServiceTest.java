@@ -42,6 +42,7 @@ class BatchIngestionServiceTest {
     private RuleEngineService ruleEngineService;
 
     private UserRepository userRepository;
+    private AuditLogRepository auditLogRepository;
 
     @BeforeEach
     void setUp() {
@@ -53,6 +54,7 @@ class BatchIngestionServiceTest {
         ruleRepository = Mockito.mock(RuleRepository.class);
         userRepository = Mockito.mock(UserRepository.class);
         ruleEngineService = Mockito.mock(RuleEngineService.class);
+        auditLogRepository = Mockito.mock(AuditLogRepository.class);
 
         ingestionService = new BatchIngestionServiceImpl(
                 validationService,
@@ -62,7 +64,8 @@ class BatchIngestionServiceTest {
                 accountRepository,
                 ruleRepository,
                 userRepository,
-                ruleEngineService
+                ruleEngineService,
+                auditLogRepository
         );
 
         when(batchRepository.save(any(TransactionBatch.class))).thenAnswer(invocation -> {

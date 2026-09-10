@@ -23,9 +23,19 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import com.tss.aml.dtos.tenant.CloseCaseNoActionRequest;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import com.tss.aml.dtos.audit.AuditLogResponseDto;
+import com.tss.aml.services.interfaces.AuditLogQueryService;
 
 @CrossOrigin
 @RestController
@@ -35,6 +45,7 @@ import java.util.UUID;
 public class ComplianceOfficerController {
 
     private final ComplianceOfficerService complianceOfficerService;
+    private final AuditLogQueryService auditLogQueryService;
 
     @GetMapping("/dashboard")
     public ResponseEntity<ComplianceOfficerDashboardResponse> getDashboard(
@@ -132,7 +143,7 @@ public class ComplianceOfficerController {
     @PostMapping("/cases/{caseId}/close-no-action")
     public ResponseEntity<CaseResponse> closeCaseNoAction(
             @PathVariable String caseId,
-            @Valid @RequestBody com.tss.aml.dtos.tenant.CloseCaseNoActionRequest request,
+            @Valid @RequestBody CloseCaseNoActionRequest request,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         UUID caseUuid = parseUuid(caseId);
         CaseResponse response = complianceOfficerService.closeCaseNoAction(caseUuid, request, currentUser);
@@ -170,6 +181,15 @@ public class ComplianceOfficerController {
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"SAR-STR-" + caseId + ".pdf\"")
                 .body(pdfBytes);
+    }
+
+    @GetMapping({ "/cases/{caseId}/audit-logs", "/cases/{caseId}/audit-trail" })
+    public ResponseEntity<List<AuditLogResponseDto>> getCaseAuditLogs(
+            @PathVariable String caseId,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        UUID caseUuid = parseUuid(caseId);
+        List<AuditLogResponseDto> logs = auditLogQueryService.getCaseAuditLogs(caseUuid, currentUser);
+        return ResponseEntity.ok(logs);
     }
 
     private UUID parseUuid(String uuidStr) {

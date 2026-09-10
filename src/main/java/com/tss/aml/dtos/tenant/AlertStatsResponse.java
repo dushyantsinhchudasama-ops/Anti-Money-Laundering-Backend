@@ -14,5 +14,7 @@ public class AlertStatsResponse {
     private long mediumSeverityCount;
     private long lowSeverityCount;
     private long openAlertsCount;
+    private long assignedAlertsCount;
+    private long closedAlertsCount;
     private long totalAlertsCount;
 }

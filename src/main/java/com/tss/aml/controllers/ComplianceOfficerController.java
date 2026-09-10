@@ -144,7 +144,8 @@ public class ComplianceOfficerController {
             @PathVariable String caseId,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         UUID caseUuid = parseUuid(caseId);
-        com.tss.aml.dtos.tenant.SarStrPreviewResponse response = complianceOfficerService.getSarStrPreview(caseUuid, currentUser);
+        com.tss.aml.dtos.tenant.SarStrPreviewResponse response = complianceOfficerService.getSarStrPreview(caseUuid,
+                currentUser);
         return ResponseEntity.ok(response);
     }
 
@@ -154,7 +155,8 @@ public class ComplianceOfficerController {
             @Valid @RequestBody com.tss.aml.dtos.tenant.SarStrFilingRequest request,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         UUID caseUuid = parseUuid(caseId);
-        com.tss.aml.dtos.tenant.SarStrResponse response = complianceOfficerService.fileSarStr(caseUuid, request, currentUser);
+        com.tss.aml.dtos.tenant.SarStrResponse response = complianceOfficerService.fileSarStr(caseUuid, request,
+                currentUser);
         return ResponseEntity.ok(response);
     }
 
@@ -165,7 +167,8 @@ public class ComplianceOfficerController {
         UUID caseUuid = parseUuid(caseId);
         byte[] pdfBytes = complianceOfficerService.getSarStrPdf(caseUuid, currentUser);
         return ResponseEntity.ok()
-                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"SAR-STR-" + caseId + ".pdf\"")
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"SAR-STR-" + caseId + ".pdf\"")
                 .body(pdfBytes);
     }
 

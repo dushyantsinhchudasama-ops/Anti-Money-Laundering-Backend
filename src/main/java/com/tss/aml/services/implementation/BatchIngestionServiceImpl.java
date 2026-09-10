@@ -10,6 +10,7 @@ import com.tss.aml.entities.tenant.*;
 import com.tss.aml.enums.AccountType;
 import com.tss.aml.enums.BatchStatus;
 import com.tss.aml.enums.RuleStatus;
+import com.tss.aml.exceptions.base.ResourceNotFoundException;
 import com.tss.aml.repositories.*;
 import com.tss.aml.ruleengine.RuleEngineService;
 import com.tss.aml.security.CustomUserDetails;
@@ -54,6 +55,14 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
                 .orElseGet(() -> userRepository.findByEmail(currentUser.getUsername())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found: " + currentUser.getUsername())));
 
+        // Fetch active rules assigned to the uploading user's tenant
+        List<Rule> activeRules = Collections.emptyList();
+        if (uploadingUser != null && uploadingUser.getTenant() != null) {
+            activeRules = ruleRepository.findActiveRulesByTenantId(uploadingUser.getTenant().getTenantId());
+        }
+        if (activeRules == null || activeRules.isEmpty()) {
+            throw new ResourceNotFoundException("The bank currently doesn't have any active rules. For further detail, Please! contact System Admin");
+        }
 
         String fileName = file != null ? file.getOriginalFilename() : "unknown.xlsx";
         String batchCode = "BATCH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
@@ -67,7 +76,7 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
                     .uploadedBy(uploadingUser)
                     .status(BatchStatus.REJECTED)
                     .totalRecords(validationResult.getParsedData().size())
-                    .alertsGeneratedCount(validationResult.getErrors().size())
+                    .alertsGeneratedCount(0)
                     .uploadedAt(LocalDateTime.now())
                     .build();
 
@@ -89,7 +98,7 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
                     .batchCode(savedRejected.getBatchCode())
                     .status(BatchStatus.REJECTED)
                     .totalRecords(validationResult.getParsedData().size())
-                    .alertsGeneratedCount(validationResult.getErrors().size())
+                    .alertsGeneratedCount(0)
                     .uploadedAt(savedRejected.getUploadedAt())
                     .errors(validationResult.getErrors())
                     .build();
@@ -103,7 +112,7 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
                 .uploadedBy(uploadingUser)
                 .status(BatchStatus.QUEUED)
                 .totalRecords(parsedRows.size())
-                .alertsGeneratedCount(validationResult.getErrors().size())
+                .alertsGeneratedCount(0)
                 .uploadedAt(LocalDateTime.now())
                 .build();
 
@@ -141,14 +150,6 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
 
         List<FinancialTransaction> savedTxns = transactionRepository.saveAll(txnsToSave);
 
-        // Fetch active rules assigned to the uploading user's tenant
-        List<Rule> activeRules = Collections.emptyList();
-        if (uploadingUser != null && uploadingUser.getTenant() != null) {
-            activeRules = ruleRepository.findActiveRulesByTenantId(uploadingUser.getTenant().getTenantId());
-        }
-        if (activeRules == null) {
-            activeRules = Collections.emptyList();
-        }
 
         log.info("Active rules count: {}", activeRules.size());
 

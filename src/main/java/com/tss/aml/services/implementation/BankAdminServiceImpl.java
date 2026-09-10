@@ -68,12 +68,15 @@ public class BankAdminServiceImpl implements BankAdminService {
 
         String temporaryPassword = generateTemporaryPassword();
         String encodedPassword = passwordEncoder.encode(temporaryPassword);
+        String empId = (request.getEmployeeId() != null && !request.getEmployeeId().isBlank())
+                ? request.getEmployeeId().trim()
+                : "EMP-" + request.getUserCode().trim().toUpperCase();
 
         Users complianceOfficer = Users.builder()
                 .tenant(tenant)
                 .userCode(request.getUserCode())
                 .role(UserRole.COMPLIANCE_OFFICER)
-                .employeeId(request.getEmployeeId())
+                .employeeId(empId)
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .phoneNumber(request.getPhoneNumber())

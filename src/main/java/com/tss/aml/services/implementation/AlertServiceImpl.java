@@ -80,6 +80,8 @@ public class AlertServiceImpl implements AlertService {
         long medium = alertRepository.countBySeverity(AlertSeverity.MEDIUM);
         long low = alertRepository.countBySeverity(AlertSeverity.LOW);
         long open = alertRepository.countByAlertStatus(AlertStatus.OPEN);
+        long assigned = alertRepository.countByAlertStatus(AlertStatus.ASSIGNED);
+        long closed = alertRepository.countByAlertStatus(AlertStatus.CLOSED);
         long total = alertRepository.count();
 
         return AlertStatsResponse.builder()
@@ -87,6 +89,8 @@ public class AlertServiceImpl implements AlertService {
                 .mediumSeverityCount(medium)
                 .lowSeverityCount(low)
                 .openAlertsCount(open)
+                .assignedAlertsCount(assigned)
+                .closedAlertsCount(closed)
                 .totalAlertsCount(total)
                 .build();
     }
@@ -135,6 +139,8 @@ public class AlertServiceImpl implements AlertService {
                 .alertCode(alert.getAlertCode())
                 .transactionId(alert.getTransaction() != null ? alert.getTransaction().getTransactionId() : null)
                 .transactionTxnNo(alert.getTransaction() != null ? alert.getTransaction().getTxnNo() : null)
+                .amount(alert.getTransaction() != null ? alert.getTransaction().getAmount() : null)
+                .currency(alert.getTransaction() != null ? alert.getTransaction().getCurrency() : null)
                 .ruleId(alert.getRule() != null ? alert.getRule().getRuleId() : null)
                 .ruleCode(alert.getRule() != null ? alert.getRule().getRuleCode() : null)
                 .ruleName(alert.getRule() != null ? alert.getRule().getRuleName() : null)

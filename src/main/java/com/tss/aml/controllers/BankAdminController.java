@@ -47,7 +47,7 @@ public class BankAdminController {
     @PreAuthorize("hasRole('BANK_ADMIN')")
     public ResponseEntity<ComplianceOfficerResponse> addComplianceOfficer(
             @Valid @RequestBody ComplianceOfficerRequest request,
-            @AuthenticationPrincipal CustomUserDetails currentUser){
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
         ComplianceOfficerResponse response = bankAdminService.createComplianceOfficer(request, currentUser);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -56,7 +56,7 @@ public class BankAdminController {
     @PreAuthorize("hasRole('BANK_ADMIN')")
     public ResponseEntity<ComplianceOfficerResponse> getComplianceOfficer(
             @PathVariable String officerId,
-            @AuthenticationPrincipal CustomUserDetails currentUser){
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
         UUID officerUuid = parseUuid(officerId);
         ComplianceOfficerResponse response = bankAdminService.getComplianceOfficer(officerUuid, currentUser);
         return ResponseEntity.ok(response);
@@ -66,9 +66,10 @@ public class BankAdminController {
     @PreAuthorize("hasRole('BANK_ADMIN')")
     public ResponseEntity<Page<ComplianceOfficerResponse>> getAllComplianceOfficerOfTenant(
             Pageable pageable,
-            @AuthenticationPrincipal CustomUserDetails currentUser){
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
         validateTenantAccess(currentUser);
-        Page<ComplianceOfficerResponse> response = bankAdminService.getAllComplianceOfficerOfTenant(currentUser.getTenantId(), pageable);
+        Page<ComplianceOfficerResponse> response = bankAdminService
+                .getAllComplianceOfficerOfTenant(currentUser.getTenantId(), pageable);
         return ResponseEntity.ok(response);
     }
 
@@ -124,7 +125,8 @@ public class BankAdminController {
             Pageable pageable,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         validateTenantAccess(currentUser);
-        Page<AlertResponse> alerts = alertService.getAlerts(severity, ruleId, status, startDate, endDate, pageable, currentUser);
+        Page<AlertResponse> alerts = alertService.getAlerts(severity, ruleId, status, startDate, endDate, pageable,
+                currentUser);
         return ResponseEntity.ok(alerts);
     }
 
@@ -203,7 +205,8 @@ public class BankAdminController {
             Pageable pageable,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         validateTenantAccess(currentUser);
-        Page<com.tss.aml.dtos.tenant.SarStrResponse> logPage = bankAdminService.getSarStrFilingLog(pageable, currentUser);
+        Page<com.tss.aml.dtos.tenant.SarStrResponse> logPage = bankAdminService.getSarStrFilingLog(pageable,
+                currentUser);
         return ResponseEntity.ok(logPage);
     }
 
@@ -216,7 +219,8 @@ public class BankAdminController {
         UUID sarStrUuid = parseUuid(sarStrId);
         byte[] pdfBytes = bankAdminService.getSarStrPdfForAdmin(sarStrUuid, currentUser);
         return ResponseEntity.ok()
-                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"SAR-STR-" + sarStrId + ".pdf\"")
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"SAR-STR-" + sarStrId + ".pdf\"")
                 .body(pdfBytes);
     }
 

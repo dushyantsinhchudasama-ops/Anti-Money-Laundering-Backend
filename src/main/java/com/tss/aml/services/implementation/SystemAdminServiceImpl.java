@@ -147,7 +147,7 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
                 () -> new ResourceNotFoundException("Rule having Id: " + ruleId + " not found.")
         );
 
-        ruleParameterValidationService.validate(request.getTypology(), request.getParameters());
+        ruleParameterValidationService.validate(rule.getTypology(), request.getParameters());
 
         SystemAdmin currAdmin = getAuthenticatedSystemAdmin();
 
@@ -155,7 +155,6 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
 
         rule.setRuleName(request.getRuleName());
         rule.setDescription(request.getDescription());
-        rule.setTypology(request.getTypology());
         rule.setDefaultSeverity(request.getDefaultSeverity());
         rule.setParameters(request.getParameters());
 

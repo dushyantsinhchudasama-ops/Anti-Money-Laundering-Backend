@@ -45,8 +45,7 @@ public class CaseServiceImpl implements CaseService {
 
     private static final List<CaseStatus> CLOSED_STATUSES = List.of(
             CaseStatus.CLOSED_SAR_FILED,
-            CaseStatus.CLOSED_NO_ACTION
-    );
+            CaseStatus.CLOSED_NO_ACTION);
 
     @Override
     @Transactional(readOnly = true)
@@ -54,8 +53,7 @@ public class CaseServiceImpl implements CaseService {
         Page<Users> officers = userRepository.findAllByTenant_TenantIdAndRole(
                 currentUser.getTenantId(),
                 UserRole.COMPLIANCE_OFFICER,
-                Pageable.unpaged()
-        );
+                Pageable.unpaged());
 
         return officers.getContent().stream().map(user -> {
             long activeCases = amlCaseRepository.countActiveCasesByAssignedToUserId(user.getUserId(), CLOSED_STATUSES);
@@ -76,18 +74,21 @@ public class CaseServiceImpl implements CaseService {
     @Transactional
     public CaseResponse assignAlertsToCase(CreateCaseRequest request, CustomUserDetails currentUser) {
         Users bankAdminUser = userRepository.findById(currentUser.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Logged-in user not found: " + currentUser.getUserId()));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Logged-in user not found: " + currentUser.getUserId()));
 
-        Users targetCO = userRepository.findByUserIdAndTenant_TenantCode(request.getAssigneeId(), currentUser.getTenantCode())
-                .orElseThrow(() -> new ResourceNotFoundException("Compliance Officer not found with ID: " + request.getAssigneeId()));
+        Users targetCO = userRepository
+                .findByUserIdAndTenant_TenantCode(request.getAssigneeId(), currentUser.getTenantCode())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Compliance Officer not found with ID: " + request.getAssigneeId()));
 
         if (targetCO.getRole() != UserRole.COMPLIANCE_OFFICER) {
             throw new IllegalArgumentException("User " + targetCO.getEmail() + " is not a Compliance Officer");
         }
 
-        
         if (!targetCO.getIsActive()) {
-            throw new IllegalArgumentException("Cannot assign case to an inactive Compliance Officer: " + targetCO.getEmail());
+            throw new IllegalArgumentException(
+                    "Cannot assign case to an inactive Compliance Officer: " + targetCO.getEmail());
         }
 
         List<Alert> alerts = alertRepository.findByAlertIdIn(request.getAlertIds());
@@ -147,12 +148,14 @@ public class CaseServiceImpl implements CaseService {
                 .action("CASE_ASSIGNED")
                 .entityType("CASE")
                 .entityId(newCase.getCaseId().toString())
-                .details("Assigned case " + newCase.getCaseCode() + " with " + alerts.size() + " alert(s) to Compliance Officer " + targetCO.getEmail() + " (" + targetCO.getUserId() + ")")
+                .details("Assigned case " + newCase.getCaseCode() + " with " + alerts.size()
+                        + " alert(s) to Compliance Officer " + targetCO.getEmail() + " (" + targetCO.getUserId() + ")")
                 .build();
         auditLogRepository.save(auditLog);
 
         log.info("Assigned {} alerts to new Case '{}' (ID: {}) for CO '{}' by Bank Admin '{}'",
-                alerts.size(), newCase.getCaseCode(), newCase.getCaseId(), targetCO.getEmail(), currentUser.getUsername());
+                alerts.size(), newCase.getCaseCode(), newCase.getCaseId(), targetCO.getEmail(),
+                currentUser.getUsername());
 
         return mapToCaseResponse(newCase);
     }
@@ -169,22 +172,27 @@ public class CaseServiceImpl implements CaseService {
 
         Users previousAssignee = amlCase.getAssignedTo();
         if (previousAssignee == null) {
-            throw new IllegalStateException("Cannot reassign an unassigned case: " + amlCase.getCaseCode() + ". Case must be assigned first.");
+            throw new IllegalStateException(
+                    "Cannot reassign an unassigned case: " + amlCase.getCaseCode() + ". Case must be assigned first.");
         }
 
-        Users newCO = userRepository.findByUserIdAndTenant_TenantCode(request.getNewAssigneeId(), currentUser.getTenantCode())
-                .orElseThrow(() -> new ResourceNotFoundException("Target Compliance Officer not found with ID: " + request.getNewAssigneeId()));
+        Users newCO = userRepository
+                .findByUserIdAndTenant_TenantCode(request.getNewAssigneeId(), currentUser.getTenantCode())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Target Compliance Officer not found with ID: " + request.getNewAssigneeId()));
 
         if (newCO.getRole() != UserRole.COMPLIANCE_OFFICER) {
             throw new IllegalArgumentException("User " + newCO.getEmail() + " is not a Compliance Officer");
         }
 
         if (!Boolean.TRUE.equals(newCO.getIsActive())) {
-            throw new IllegalArgumentException("Cannot reassign case to an inactive Compliance Officer: " + newCO.getEmail());
+            throw new IllegalArgumentException(
+                    "Cannot reassign case to an inactive Compliance Officer: " + newCO.getEmail());
         }
 
         if (previousAssignee.getUserId().equals(newCO.getUserId())) {
-            throw new IllegalArgumentException("Cannot reassign case to the current Compliance Officer: " + newCO.getEmail());
+            throw new IllegalArgumentException(
+                    "Cannot reassign case to the current Compliance Officer: " + newCO.getEmail());
         }
 
         Users bankAdminUser = userRepository.findById(currentUser.getUserId()).orElse(null);
@@ -196,7 +204,8 @@ public class CaseServiceImpl implements CaseService {
                 .recipient(newCO)
                 .eventType(NotificationEventType.CASE_ASSIGNED)
                 .channel(NotificationChannel.IN_APP)
-                .message("Case " + amlCase.getCaseCode() + " has been reassigned to you." + (request.getReason() != null ? " Reason: " + request.getReason() : ""))
+                .message("Case " + amlCase.getCaseCode() + " has been reassigned to you."
+                        + (request.getReason() != null ? " Reason: " + request.getReason() : ""))
                 .isRead(false)
                 .build();
         notificationRepository.save(notification);
@@ -210,19 +219,23 @@ public class CaseServiceImpl implements CaseService {
                 .details("Reassigned case " + amlCase.getCaseCode() + " from Compliance Officer " +
                         previousAssignee.getEmail() + " (" + previousAssignee.getUserId() + ") to Compliance Officer " +
                         newCO.getEmail() + " (" + newCO.getUserId() + ")" +
-                        (request.getReason() != null && !request.getReason().isBlank() ? ". Reason: " + request.getReason() : ""))
+                        (request.getReason() != null && !request.getReason().isBlank()
+                                ? ". Reason: " + request.getReason()
+                                : ""))
                 .build();
         auditLogRepository.save(auditLog);
 
         log.info("Reassigned Case '{}' (ID: {}) from CO '{}' to CO '{}' by Bank Admin '{}'",
-                amlCase.getCaseCode(), amlCase.getCaseId(), previousAssignee.getEmail(), newCO.getEmail(), currentUser.getUsername());
+                amlCase.getCaseCode(), amlCase.getCaseId(), previousAssignee.getEmail(), newCO.getEmail(),
+                currentUser.getUsername());
 
         return mapToCaseResponse(amlCase);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<CaseResponse> getCases(CaseStatus status, UUID assignedToId, Pageable pageable, CustomUserDetails currentUser) {
+    public Page<CaseResponse> getCases(CaseStatus status, UUID assignedToId, Pageable pageable,
+            CustomUserDetails currentUser) {
         Page<AmlCase> casesPage = amlCaseRepository.findCasesWithFilters(status, assignedToId, pageable);
         return casesPage.map(this::mapToCaseResponse);
     }
@@ -236,17 +249,22 @@ public class CaseServiceImpl implements CaseService {
     }
 
     private CaseResponse mapToCaseResponse(AmlCase amlCase) {
-        List<AlertResponse> alertResponses = amlCase.getAlerts() != null ?
-                amlCase.getAlerts().stream().map(this::mapToAlertResponse).collect(Collectors.toList()) : List.of();
+        List<AlertResponse> alertResponses = amlCase.getAlerts() != null
+                ? amlCase.getAlerts().stream().map(this::mapToAlertResponse).collect(Collectors.toList())
+                : List.of();
 
         return CaseResponse.builder()
                 .caseId(amlCase.getCaseId())
                 .caseCode(amlCase.getCaseCode())
                 .status(amlCase.getStatus())
                 .createdById(amlCase.getCreatedBy() != null ? amlCase.getCreatedBy().getUserId() : null)
-                .createdByName(amlCase.getCreatedBy() != null ? amlCase.getCreatedBy().getFirstName() + " " + amlCase.getCreatedBy().getLastName() : null)
+                .createdByName(amlCase.getCreatedBy() != null
+                        ? amlCase.getCreatedBy().getFirstName() + " " + amlCase.getCreatedBy().getLastName()
+                        : null)
                 .assignedToId(amlCase.getAssignedTo() != null ? amlCase.getAssignedTo().getUserId() : null)
-                .assignedToName(amlCase.getAssignedTo() != null ? amlCase.getAssignedTo().getFirstName() + " " + amlCase.getAssignedTo().getLastName() : null)
+                .assignedToName(amlCase.getAssignedTo() != null
+                        ? amlCase.getAssignedTo().getFirstName() + " " + amlCase.getAssignedTo().getLastName()
+                        : null)
                 .alertCount(alertResponses.size())
                 .alerts(alertResponses)
                 .createdAt(amlCase.getCreatedAt())

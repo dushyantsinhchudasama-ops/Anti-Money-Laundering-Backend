@@ -15,7 +15,6 @@ public class ComplianceOfficerRequest {
     @NotBlank(message = "userCode is required")
     private String userCode;
 
-    @NotBlank(message = "employeeId is required")
     private String employeeId;
 
     @NotBlank(message = "firstName is required")

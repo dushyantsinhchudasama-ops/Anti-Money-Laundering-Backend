@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+@CrossOrigin
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/system/admin")
@@ -31,7 +32,7 @@ public class SystemAdminController {
     @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<CreateRuleResponse> updateRule(
             @PathVariable("ruleId") UUID ruleId,
-            @RequestBody UpdateRuleRequest request
+            @Valid @RequestBody UpdateRuleRequest request
     ) {
         CreateRuleResponse response = systemAdminService.updateRule(ruleId, request);
         return new ResponseEntity<>(response, HttpStatus.OK);

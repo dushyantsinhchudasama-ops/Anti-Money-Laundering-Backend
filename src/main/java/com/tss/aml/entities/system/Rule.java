@@ -1,5 +1,6 @@
 package com.tss.aml.entities.system;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.tss.aml.entities.common.BaseEntity;
 import com.tss.aml.enums.RuleSeverity;
 import com.tss.aml.enums.RuleStatus;
@@ -63,8 +64,10 @@ public class Rule extends BaseEntity {
     private RuleStatus status = RuleStatus.DRAFT;
 
     @OneToMany(mappedBy = "rule", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<RuleVersionHistory> versionHistory;
 
     @OneToMany(mappedBy = "rule", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<BankRuleAssignment> bankAssignments;
 }

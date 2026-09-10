@@ -129,6 +129,21 @@ public class TenantService {
         return tenantRepository.findAll();
     }
 
+    public List<CreateTenantResponse> getAllTenantResponses() {
+        return tenantRepository.findAll().stream()
+                .map(tenant -> CreateTenantResponse.builder()
+                        .tenantId(tenant.getTenantId())
+                        .tenantCode(tenant.getTenantCode())
+                        .tenantName(tenant.getTenantName())
+                        .displayName(tenant.getDisplayName())
+                        .schemaName(tenant.getSchemaName())
+                        .status(tenant.getStatus())
+                        .onboardedByAdminId(tenant.getOnboardedByAdmin() != null ? tenant.getOnboardedByAdmin().getSystemAdminId() : null)
+                        .createdAt(tenant.getCreatedAt())
+                        .build())
+                .toList();
+    }
+
     public Tenant getTenant(UUID tenantId) {
 
 

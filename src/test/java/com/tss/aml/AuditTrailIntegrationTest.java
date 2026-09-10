@@ -419,7 +419,6 @@ public class AuditTrailIntegrationTest {
         UpdateRuleRequest updateReq = new UpdateRuleRequest();
         updateReq.setRuleName("Updated Rule Audit Test " + uniqueSuffix);
         updateReq.setDescription("Updated rule description");
-        updateReq.setTypology(RuleTypology.STRUCTURING_SMURFING);
         updateReq.setDefaultSeverity(RuleSeverity.MEDIUM);
         updateReq.setParameters(Map.of("windowDays", 10, "reportingThreshold", 9500));
 

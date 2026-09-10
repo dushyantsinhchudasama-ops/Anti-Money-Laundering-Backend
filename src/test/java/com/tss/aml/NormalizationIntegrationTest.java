@@ -49,6 +49,9 @@ class NormalizationIntegrationTest {
     private SystemAdminRepository systemAdminRepository;
 
     @Autowired
+    private com.tss.aml.services.interfaces.BankAdminService bankAdminService;
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @MockitoBean
@@ -58,7 +61,7 @@ class NormalizationIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.execute("DELETE FROM public.users WHERE email LIKE '%normtest%' OR email LIKE '%abc.com'");
+        jdbcTemplate.execute("TRUNCATE TABLE public.users CASCADE");
         jdbcTemplate.execute("DELETE FROM public.bank_rule_assignment WHERE tenant_id IN (SELECT tenant_id FROM public.tenants WHERE tenant_code LIKE 'norm%')");
         jdbcTemplate.execute("DELETE FROM public.tenants WHERE tenant_code LIKE 'norm%'");
 
@@ -247,4 +250,52 @@ class NormalizationIntegrationTest {
         Tenant tenantUpperLookup = tenantRepository.findByTenantCode("NORMLOGINCODE".toLowerCase()).orElseThrow();
         assertThat(tenantUpperLookup.getTenantId()).isEqualTo(tenantRes.getTenantId());
     }
+
+    // EMAIL TEST 11: Create Compliance Officer with mixed-case and whitespace email -> stores normalized email and user can authenticate
+    @Test
+    @DisplayName("Email 11: Create Compliance Officer with mixed-case/padded email stores normalized email")
+    void createComplianceOfficerWithMixedCaseEmail_StoresNormalizedLowercase() {
+        CreateTenantResponse tenantRes = tenantService.onboardTenant(CreateTenantRequest.builder()
+                .tenantCode("normtenantco")
+                .tenantName("Norm Tenant CO")
+                .displayName("Norm Tenant CO")
+                .build());
+
+        CreateBankAdminRequest adminReq = new CreateBankAdminRequest();
+        adminReq.setUserCode("NORM_ADMIN_CO");
+        adminReq.setFirstName("Bank");
+        adminReq.setLastName("Admin");
+        adminReq.setEmail("admin.co@normtest.com");
+        tenantService.createBankAdmin(tenantRes.getTenantId(), adminReq);
+
+        Users adminUser = userRepository.findByEmail("admin.co@normtest.com").orElseThrow();
+        com.tss.aml.security.CustomUserDetails adminDetails = com.tss.aml.security.CustomUserDetails.builder()
+                .userId(adminUser.getUserId())
+                .username(adminUser.getUserCode())
+                .password(adminUser.getPasswordHash())
+                .authorities(List.of(new SimpleGrantedAuthority("ROLE_BANK_ADMIN")))
+                .tenantId(tenantRes.getTenantId())
+                .tenantCode(tenantRes.getTenantCode())
+                .mustResetPassword(adminUser.getMustResetPassword())
+                .enabled(adminUser.getIsActive())
+                .accountNonLocked(true)
+                .build();
+
+        com.tss.aml.dtos.tenant.ComplianceOfficerRequest coRequest = new com.tss.aml.dtos.tenant.ComplianceOfficerRequest();
+        coRequest.setUserCode("NORM_CO_001");
+        coRequest.setEmployeeId("EMP_CO_NORM");
+        coRequest.setFirstName("Mixed");
+        coRequest.setLastName("Officer");
+        coRequest.setEmail("  Compliance.Officer@NORMTEST.COM  ");
+        coRequest.setPhoneNumber("+12345678901");
+
+        com.tss.aml.dtos.tenant.ComplianceOfficerResponse coResponse = bankAdminService.createComplianceOfficer(coRequest, adminDetails);
+
+        assertThat(coResponse.getEmail()).isEqualTo("compliance.officer@normtest.com");
+
+        Users coInDb = userRepository.findByEmail("compliance.officer@normtest.com").orElseThrow();
+        assertThat(coInDb.getEmail()).isEqualTo("compliance.officer@normtest.com");
+        assertThat(coInDb.getUserCode()).isEqualTo("NORM_CO_001");
+    }
 }
+

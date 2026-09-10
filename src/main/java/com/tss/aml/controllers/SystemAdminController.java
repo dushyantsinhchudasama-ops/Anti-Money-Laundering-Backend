@@ -15,6 +15,10 @@ import com.tss.aml.dtos.audit.SystemAuditLogResponseDto;
 import com.tss.aml.services.interfaces.AuditLogQueryService;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import com.tss.aml.dtos.tenant.CreateTenantResponse;
+import com.tss.aml.dtos.tenant.UpdateTenantStatusRequest;
+import com.tss.aml.tenant.TenantService;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +30,17 @@ import java.util.UUID;
 public class SystemAdminController {
     private final ISystemAdminService systemAdminService;
     private final AuditLogQueryService auditLogQueryService;
+    private final TenantService tenantService;
+
+    @PatchMapping("/tenants/{tenantId}/status")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    public ResponseEntity<CreateTenantResponse> updateTenantStatus(
+            @PathVariable("tenantId") UUID tenantId,
+            @Valid @RequestBody UpdateTenantStatusRequest request
+    ) {
+        CreateTenantResponse response = tenantService.updateTenantStatus(tenantId, request);
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping("/rules")
     @PreAuthorize("hasRole('SYSTEM_ADMIN')")

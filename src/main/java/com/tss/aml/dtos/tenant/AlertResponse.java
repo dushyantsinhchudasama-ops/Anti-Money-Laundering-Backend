@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -19,6 +20,8 @@ public class AlertResponse {
     private String alertCode;
     private UUID transactionId;
     private String transactionTxnNo;
+    private BigDecimal amount;
+    private String currency;
     private UUID ruleId;
     private String ruleCode;
     private String ruleName;

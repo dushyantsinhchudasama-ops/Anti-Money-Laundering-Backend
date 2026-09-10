@@ -1,5 +1,6 @@
 package com.tss.aml.dtos.tenant;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -20,7 +21,9 @@ public class CreateCaseRequest {
     private List<UUID> alertIds;
 
     @NotNull(message = "Assignee user ID must be specified")
+    @JsonAlias({"assignedToId", "assigneeId"})
     private UUID assigneeId;
 
+    @JsonAlias({"notes", "initialNote"})
     private String initialNote;
 }

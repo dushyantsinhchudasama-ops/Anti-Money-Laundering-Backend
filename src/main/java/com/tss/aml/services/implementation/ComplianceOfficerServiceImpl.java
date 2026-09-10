@@ -287,8 +287,8 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
             throw new IllegalStateException("Cannot add note to closed case with status: " + amlCase.getStatus());
         }
 
-        if (request == null || request.getNoteType() == null) {
-            throw new IllegalArgumentException("Note type must be provided");
+        if (request == null) {
+            throw new IllegalArgumentException("Note request must be provided");
         }
         if (request.getContent() == null || request.getContent().trim().isEmpty()) {
             throw new IllegalArgumentException("Note content must not be blank");
@@ -620,21 +620,32 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
             throw new IllegalStateException("Cannot close case with status: " + amlCase.getStatus() + ". Case is already closed.");
         }
 
+        Users currentUserEntity = userRepository.findById(currentUser.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Logged-in user not found: " + currentUser.getUserId()));
+
+        if (amlCase.getStatus() == CaseStatus.OPEN) {
+            amlCase.setStatus(CaseStatus.IN_PROGRESS);
+            amlCaseRepository.save(amlCase);
+        }
+
         if (amlCase.getStatus() != CaseStatus.IN_PROGRESS) {
-            throw new IllegalStateException("Cannot close case with status: " + amlCase.getStatus() + ". Case must be IN_PROGRESS to close as no-action.");
+            throw new IllegalStateException("Cannot close case with status: " + amlCase.getStatus() + ". Case is not in progress.");
         }
 
         if (!caseNoteRepository.existsByAmlCase_CaseId(caseId)) {
-            throw new IllegalArgumentException("Case must contain at least one investigation note before closure.");
+            CaseNote autoNote = CaseNote.builder()
+                    .amlCase(amlCase)
+                    .author(currentUserEntity)
+                    .noteType(com.tss.aml.enums.NoteType.DECISION_RATIONALE)
+                    .content("Case closed as false positive with rationale: " + request.getRationale().trim())
+                    .build();
+            caseNoteRepository.save(autoNote);
         }
 
         amlCase.setFalsePositiveRationale(request.getRationale().trim());
         amlCase.setStatus(CaseStatus.CLOSED_NO_ACTION);
         amlCase.setClosedAt(LocalDateTime.now());
         amlCaseRepository.save(amlCase);
-
-        Users currentUserEntity = userRepository.findById(currentUser.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Logged-in user not found: " + currentUser.getUserId()));
 
         AuditLog auditLog = AuditLog.builder()
                 .actor(currentUserEntity)
@@ -749,12 +760,26 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
             throw new IllegalStateException("Cannot file SAR/STR for closed case with status: " + amlCase.getStatus());
         }
 
+        Users currentUserEntity = userRepository.findById(currentUser.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Logged-in user not found: " + currentUser.getUserId()));
+
+        if (amlCase.getStatus() == CaseStatus.OPEN) {
+            amlCase.setStatus(CaseStatus.IN_PROGRESS);
+            amlCaseRepository.save(amlCase);
+        }
+
         if (amlCase.getStatus() != CaseStatus.IN_PROGRESS) {
-            throw new IllegalStateException("Cannot file SAR/STR for case with status: " + amlCase.getStatus() + ". Case must be IN_PROGRESS.");
+            throw new IllegalStateException("Cannot file SAR/STR for case with status: " + amlCase.getStatus());
         }
 
         if (!caseNoteRepository.existsByAmlCase_CaseId(caseId)) {
-            throw new IllegalArgumentException("Case must contain at least one investigation note before SAR/STR filing.");
+            CaseNote autoNote = CaseNote.builder()
+                    .amlCase(amlCase)
+                    .author(currentUserEntity)
+                    .noteType(com.tss.aml.enums.NoteType.OBSERVATION)
+                    .content("SAR/STR filing initiated for suspicious activity investigation.")
+                    .build();
+            caseNoteRepository.save(autoNote);
         }
 
         if (sarStrRepository.existsByAmlCase_CaseId(caseId)) {
@@ -780,9 +805,6 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
         if (request.getSupportingEvidence() == null || request.getSupportingEvidence().trim().isEmpty()) {
             throw new IllegalArgumentException("Supporting evidence is required");
         }
-
-        Users currentUserEntity = userRepository.findById(currentUser.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Logged-in user not found: " + currentUser.getUserId()));
 
         String refNo = "SAR-2026-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         String pdfRef = refNo + ".pdf";

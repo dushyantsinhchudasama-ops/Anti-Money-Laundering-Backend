@@ -142,6 +142,9 @@ class CaseAssignmentReassignmentIntegrationTest {
 
     private Alert unassignedAlert;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
@@ -202,7 +205,7 @@ class CaseAssignmentReassignmentIntegrationTest {
         accountRepository.deleteAll();
         TenantContext.clear();
 
-        userRepository.deleteAll();
+        jdbcTemplate.execute("TRUNCATE TABLE public.users CASCADE");
 
         // Create HDFC Users
         hdfcBankAdmin = userRepository.save(Users.builder()

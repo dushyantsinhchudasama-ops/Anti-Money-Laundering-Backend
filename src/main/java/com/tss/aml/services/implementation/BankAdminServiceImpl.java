@@ -36,6 +36,9 @@ import com.tss.aml.entities.tenant.SarStr;
 import com.tss.aml.repositories.SarStrRepository;
 import com.tss.aml.dtos.tenant.SarStrResponse;
 
+import com.tss.aml.entities.tenant.AuditLog;
+import com.tss.aml.repositories.AuditLogRepository;
+
 @RequiredArgsConstructor
 @Service
 @Slf4j
@@ -46,6 +49,7 @@ public class BankAdminServiceImpl implements BankAdminService {
     private final AmlCaseRepository amlCaseRepository;
     private final EmailService emailService;
     private final SarStrRepository sarStrRepository;
+    private final AuditLogRepository auditLogRepository;
 
     @Override
     @Transactional
@@ -86,6 +90,19 @@ public class BankAdminServiceImpl implements BankAdminService {
 
         complianceOfficer = userRepository.save(complianceOfficer);
 
+        Users bankAdminUser = userRepository.findById(currentUser.getUserId()).orElse(null);
+        if (bankAdminUser != null) {
+            AuditLog auditLog = AuditLog.builder()
+                    .actor(bankAdminUser)
+                    .action("COMPLIANCE_OFFICER_CREATED")
+                    .entityType("USER")
+                    .entityId(complianceOfficer.getUserId().toString())
+                    .details("Created Compliance Officer user " + complianceOfficer.getEmail() + " ("
+                            + complianceOfficer.getUserCode() + ")")
+                    .build();
+            auditLogRepository.save(auditLog);
+        }
+
         log.info("Created Compliance Officer user '{}' (ID: {}) for tenant '{}' (ID: {}) by BankAdmin '{}'",
                 complianceOfficer.getEmail(), complianceOfficer.getUserId(), tenant.getTenantCode(),
                 tenant.getTenantId(), currentUser.getUsername());
@@ -96,8 +113,7 @@ public class BankAdminServiceImpl implements BankAdminService {
                 tenant.getTenantName(),
                 tenant.getTenantCode(),
                 complianceOfficer.getUserCode(),
-                temporaryPassword
-        );
+                temporaryPassword);
 
         return ComplianceOfficerResponse.builder()
                 .userId(complianceOfficer.getUserId())
@@ -171,6 +187,19 @@ public class BankAdminServiceImpl implements BankAdminService {
         complianceOfficer.setIsActive(false);
         complianceOfficer = userRepository.save(complianceOfficer);
 
+        Users bankAdminUser = userRepository.findById(currentUser.getUserId()).orElse(null);
+        if (bankAdminUser != null) {
+            AuditLog auditLog = AuditLog.builder()
+                    .actor(bankAdminUser)
+                    .action("COMPLIANCE_OFFICER_DEACTIVATED")
+                    .entityType("USER")
+                    .entityId(complianceOfficer.getUserId().toString())
+                    .details("Deactivated Compliance Officer user " + complianceOfficer.getEmail() + " ("
+                            + complianceOfficer.getUserId() + ")")
+                    .build();
+            auditLogRepository.save(auditLog);
+        }
+
         String tenantSchema = complianceOfficer.getTenant() != null ? complianceOfficer.getTenant().getSchemaName()
                 : null;
         if (tenantSchema == null && currentUser != null && currentUser.getTenantId() != null) {
@@ -183,7 +212,9 @@ public class BankAdminServiceImpl implements BankAdminService {
                 TenantContext.setCurrentTenant(tenantSchema);
             }
 
-            Users bankAdminUser = userRepository.findById(currentUser.getUserId()).orElse(null);
+            if (bankAdminUser == null) {
+                bankAdminUser = userRepository.findById(currentUser.getUserId()).orElse(null);
+            }
             if (bankAdminUser != null) {
                 List<CaseStatus> closedStatuses = List.of(CaseStatus.CLOSED_SAR_FILED, CaseStatus.CLOSED_NO_ACTION);
                 List<AmlCase> openCases = amlCaseRepository.findOpenCasesByAssignedToUserId(officerId, closedStatuses);
@@ -234,6 +265,19 @@ public class BankAdminServiceImpl implements BankAdminService {
         complianceOfficer.setIsActive(true);
         complianceOfficer = userRepository.save(complianceOfficer);
 
+        Users bankAdminUser = userRepository.findById(currentUser.getUserId()).orElse(null);
+        if (bankAdminUser != null) {
+            AuditLog auditLog = AuditLog.builder()
+                    .actor(bankAdminUser)
+                    .action("COMPLIANCE_OFFICER_ACTIVATED")
+                    .entityType("USER")
+                    .entityId(complianceOfficer.getUserId().toString())
+                    .details("Activated Compliance Officer user " + complianceOfficer.getEmail() + " ("
+                            + complianceOfficer.getUserId() + ")")
+                    .build();
+            auditLogRepository.save(auditLog);
+        }
+
         log.info("Reactivated Compliance Officer '{}' (ID: {}) by Bank Admin '{}'",
                 complianceOfficer.getEmail(), officerId, currentUser.getUsername());
 
@@ -267,14 +311,26 @@ public class BankAdminServiceImpl implements BankAdminService {
         complianceOfficer.setFailedLoginCount(0);
         complianceOfficer = userRepository.save(complianceOfficer);
 
+        Users bankAdminUser = userRepository.findById(currentUser.getUserId()).orElse(null);
+        if (bankAdminUser != null) {
+            AuditLog auditLog = AuditLog.builder()
+                    .actor(bankAdminUser)
+                    .action("COMPLIANCE_OFFICER_PASSWORD_RESET")
+                    .entityType("USER")
+                    .entityId(complianceOfficer.getUserId().toString())
+                    .details("Reset password for Compliance Officer user " + complianceOfficer.getEmail() + " ("
+                            + complianceOfficer.getUserId() + ")")
+                    .build();
+            auditLogRepository.save(auditLog);
+        }
+
         log.info("Reset password for Compliance Officer '{}' (ID: {}) by Bank Admin '{}'",
                 complianceOfficer.getEmail(), officerId, currentUser.getUsername());
 
         emailService.sendPasswordResetEmail(
                 complianceOfficer.getEmail(),
                 complianceOfficer.getFirstName(),
-                newTempPassword
-        );
+                newTempPassword);
 
         return ComplianceOfficerResponse.builder()
                 .userId(complianceOfficer.getUserId())
@@ -310,7 +366,8 @@ public class BankAdminServiceImpl implements BankAdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("SAR/STR report not found with ID " + sarStrId));
 
         if (sarStr.getPdfContent() == null) {
-            throw new ResourceNotFoundException("PDF content not found for SAR/STR report " + sarStr.getReferenceNumber());
+            throw new ResourceNotFoundException(
+                    "PDF content not found for SAR/STR report " + sarStr.getReferenceNumber());
         }
 
         return sarStr.getPdfContent();
@@ -339,7 +396,9 @@ public class BankAdminServiceImpl implements BankAdminService {
                 .referenceNumber(sarStr.getReferenceNumber())
                 .pdfReference(sarStr.getPdfReference())
                 .filedById(sarStr.getFiledBy() != null ? sarStr.getFiledBy().getUserId() : null)
-                .filedByName(sarStr.getFiledBy() != null ? sarStr.getFiledBy().getFirstName() + " " + sarStr.getFiledBy().getLastName() : null)
+                .filedByName(sarStr.getFiledBy() != null
+                        ? sarStr.getFiledBy().getFirstName() + " " + sarStr.getFiledBy().getLastName()
+                        : null)
                 .filedByEmail(sarStr.getFiledBy() != null ? sarStr.getFiledBy().getEmail() : null)
                 .submittedAt(sarStr.getSubmittedAt())
                 .accountNumber(account != null ? account.getAccountNumber() : null)

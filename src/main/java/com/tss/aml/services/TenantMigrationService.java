@@ -37,6 +37,8 @@ public class TenantMigrationService {
                 .locations("classpath:db/migration/tenant")
                 .schemas(schemaName)
                 .defaultSchema(schemaName)
+                .baselineOnMigrate(true)
+                .validateOnMigrate(false)
                 .load();
 
         MigrateResult result = flyway.migrate();

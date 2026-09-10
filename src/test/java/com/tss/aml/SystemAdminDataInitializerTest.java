@@ -87,6 +87,7 @@ class SystemAdminDataInitializerTest {
     void defaultSystemAdminIsCreatedAndHashed() {
         ruleVersionHistoryRepository.deleteAll();
         ruleRepository.deleteAll();
+        jdbcTemplate.execute("TRUNCATE TABLE public.system_audit_log CASCADE");
         systemAdminRepository.deleteAll();
         assertThat(systemAdminRepository.count()).isEqualTo(0);
 

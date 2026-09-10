@@ -14,6 +14,8 @@ import com.tss.aml.repositories.RuleRepository;
 import com.tss.aml.repositories.RuleVersionHistoryRepository;
 import com.tss.aml.repositories.SystemAdminRepository;
 import com.tss.aml.repositories.TenantRepository;
+import com.tss.aml.entities.system.SystemAuditLog;
+import com.tss.aml.repositories.SystemAuditLogRepository;
 import com.tss.aml.ruleengine.validators.RuleParameterValidationService;
 import com.tss.aml.security.CustomUserDetails;
 import com.tss.aml.services.interfaces.ISystemAdminService;
@@ -39,6 +41,7 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
     private final TenantRepository tenantRepository;
     private final BankRuleAssignmentRepository bankRuleAssignmentRepository;
     private final RuleParameterValidationService ruleParameterValidationService;
+    private final SystemAuditLogRepository systemAuditLogRepository;
 
     @Override
     @Transactional
@@ -70,6 +73,17 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
                 .build();
 
         ruleVersionHistoryRepository.save(versionHistory);
+
+        if (currAdmin != null) {
+            SystemAuditLog systemAudit = SystemAuditLog.builder()
+                    .actor(currAdmin)
+                    .action("RULE_CREATED")
+                    .entityType("RULE")
+                    .entityId(rule.getRuleId().toString())
+                    .details("Created rule " + rule.getRuleCode() + " (" + rule.getRuleName() + ")")
+                    .build();
+            systemAuditLogRepository.save(systemAudit);
+        }
 
         return CreateRuleResponse.builder()
                 .ruleId(rule.getRuleId())
@@ -116,6 +130,17 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
 
         assignment = bankRuleAssignmentRepository.save(assignment);
 
+        if (admin != null) {
+            SystemAuditLog systemAudit = SystemAuditLog.builder()
+                    .actor(admin)
+                    .action("RULE_ASSIGNED")
+                    .entityType("RULE_ASSIGNMENT")
+                    .entityId(assignment.getAssignmentId().toString())
+                    .details("Assigned rule " + rule.getRuleCode() + " to tenant " + tenant.getTenantCode() + " (" + tenant.getTenantId() + ")")
+                    .build();
+            systemAuditLogRepository.save(systemAudit);
+        }
+
         return mapToRuleAssignmentResponse(assignment);
     }
 
@@ -137,7 +162,19 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
         BankRuleAssignment assignment = bankRuleAssignmentRepository.findByTenant_TenantIdAndRule_RuleId(tenantId, ruleId)
                 .orElseThrow(() -> new IllegalArgumentException("Assignment not found for tenant " + tenantId + " and rule " + ruleId));
 
+        SystemAdmin admin = getAuthenticatedSystemAdmin();
         bankRuleAssignmentRepository.delete(assignment);
+
+        if (admin != null) {
+            SystemAuditLog systemAudit = SystemAuditLog.builder()
+                    .actor(admin)
+                    .action("RULE_UNASSIGNED")
+                    .entityType("RULE_ASSIGNMENT")
+                    .entityId(assignment.getAssignmentId().toString())
+                    .details("Unassigned rule " + assignment.getRule().getRuleCode() + " from tenant " + assignment.getTenant().getTenantCode())
+                    .build();
+            systemAuditLogRepository.save(systemAudit);
+        }
     }
 
     @Override
@@ -170,6 +207,17 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
                 .build();
 
         ruleVersionHistoryRepository.save(versionHistory);
+
+        if (currAdmin != null) {
+            SystemAuditLog systemAudit = SystemAuditLog.builder()
+                    .actor(currAdmin)
+                    .action("RULE_UPDATED")
+                    .entityType("RULE")
+                    .entityId(rule.getRuleId().toString())
+                    .details("Updated rule " + rule.getRuleCode() + " (" + rule.getRuleName() + ")")
+                    .build();
+            systemAuditLogRepository.save(systemAudit);
+        }
 
         return CreateRuleResponse.builder()
                 .ruleId(rule.getRuleId())

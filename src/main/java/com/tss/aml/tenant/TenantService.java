@@ -38,7 +38,6 @@ public class TenantService {
     private final TenantMigrationService tenantMigrationService;
     private final com.tss.aml.services.EmailService emailService;
 
-
     public CreateTenantResponse onboardTenant(CreateTenantRequest request) {
         String normalizedTenantCode = com.tss.aml.util.NormalizationUtils.normalizeTenantCode(request.getTenantCode());
         if (tenantRepository.existsByTenantCode(normalizedTenantCode)) {
@@ -103,12 +102,14 @@ public class TenantService {
                 }
             }
             return systemAdminRepository.findByEmail(userDetails.getUsername())
-                    .orElseThrow(() -> new IllegalStateException("System Admin not found for email: " + userDetails.getUsername()));
+                    .orElseThrow(() -> new IllegalStateException(
+                            "System Admin not found for email: " + userDetails.getUsername()));
         }
 
         if (principal instanceof UserDetails userDetails) {
             return systemAdminRepository.findByEmail(userDetails.getUsername())
-                    .orElseThrow(() -> new IllegalStateException("System Admin not found for username: " + userDetails.getUsername()));
+                    .orElseThrow(() -> new IllegalStateException(
+                            "System Admin not found for username: " + userDetails.getUsername()));
         }
 
         if (principal instanceof String text) {
@@ -117,9 +118,9 @@ public class TenantService {
                     .orElseThrow(() -> new IllegalStateException("System Admin not found for identifier: " + text));
         }
 
-        throw new IllegalStateException("Unsupported principal type in SecurityContext: " + principal.getClass().getName());
+        throw new IllegalStateException(
+                "Unsupported principal type in SecurityContext: " + principal.getClass().getName());
     }
-
 
     private String generateSchemaName(String tenantCode) {
         return "tenant_" + tenantCode.toLowerCase().replaceAll("[^a-z0-9]", "_");
@@ -131,31 +132,25 @@ public class TenantService {
 
     public Tenant getTenant(UUID tenantId) {
 
-
         return tenantRepository.findById(tenantId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Tenant not found: " + tenantId
-                        )
-                );
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Tenant not found: " + tenantId));
     }
 
     public String getSchemaName(UUID tenantId) {
 
         Tenant tenant = getTenant(tenantId);
 
-                if (tenant.getStatus() != TenantStatus.ACTIVE) {
-                        throw new IllegalStateException(
-                                         "Tenant is not active: " + tenantId
-                        );
-                }
+        if (tenant.getStatus() != TenantStatus.ACTIVE) {
+            throw new IllegalStateException(
+                    "Tenant is not active: " + tenantId);
+        }
 
         if (tenant.getSchemaName() == null ||
                 tenant.getSchemaName().isBlank()) {
 
             throw new IllegalStateException(
-                    "Tenant does not have a configured schema"
-            );
+                    "Tenant does not have a configured schema");
         }
 
         return tenant.getSchemaName();
@@ -208,8 +203,7 @@ public class TenantService {
                 user.getFirstName(),
                 tenant.getTenantName(),
                 tenant.getTenantCode(),
-                temporaryPassword
-        );
+                temporaryPassword);
 
         return CreateBankAdminResponse.builder()
                 .userId(user.getUserId())
@@ -231,5 +225,3 @@ public class TenantService {
         return "TmpAdmin@" + UUID.randomUUID().toString().substring(0, 8);
     }
 }
-
-

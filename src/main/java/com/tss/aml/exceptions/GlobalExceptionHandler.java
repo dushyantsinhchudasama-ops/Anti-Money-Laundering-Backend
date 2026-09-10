@@ -48,7 +48,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<Map<String, String>> handleAuthentication(AuthenticationException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", ex.getMessage()));
+        Map<String, String> body = new java.util.LinkedHashMap<>();
+        body.put("error", ex.getMessage());
+        body.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
@@ -61,7 +64,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleResponseStatus(
             org.springframework.web.server.ResponseStatusException ex) {
         String msg = ex.getReason() != null ? ex.getReason() : ex.getMessage();
-        return ResponseEntity.status(ex.getStatusCode()).body(Map.of("error", msg));
+        Map<String, String> body = new java.util.LinkedHashMap<>();
+        body.put("error", msg);
+        body.put("message", msg);
+        return ResponseEntity.status(ex.getStatusCode()).body(body);
     }
 
     @ExceptionHandler(Exception.class)

@@ -37,6 +37,7 @@ public class TenantService {
     private final PasswordEncoder passwordEncoder;
     private final TenantMigrationService tenantMigrationService;
     private final com.tss.aml.services.EmailService emailService;
+    private final com.tss.aml.repositories.SystemAuditLogRepository systemAuditLogRepository;
 
     public CreateTenantResponse onboardTenant(CreateTenantRequest request) {
         String normalizedTenantCode = com.tss.aml.util.NormalizationUtils.normalizeTenantCode(request.getTenantCode());
@@ -233,6 +234,41 @@ public class TenantService {
                 .isActive(user.getIsActive())
                 .mustResetPassword(user.getMustResetPassword())
                 .createdAt(user.getCreatedAt())
+                .build();
+    }
+
+    public CreateTenantResponse updateTenantStatus(UUID tenantId, com.tss.aml.dtos.tenant.UpdateTenantStatusRequest request) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + tenantId));
+
+        tenant.setStatus(request.getStatus());
+        tenant = tenantRepository.save(tenant);
+
+        try {
+            SystemAdmin admin = getCurrentAuthenticatedSystemAdmin();
+            if (admin != null) {
+                com.tss.aml.entities.system.SystemAuditLog systemAudit = com.tss.aml.entities.system.SystemAuditLog.builder()
+                        .actor(admin)
+                        .action("TENANT_STATUS_UPDATED")
+                        .entityType("TENANT")
+                        .entityId(tenant.getTenantId().toString())
+                        .details("Updated tenant status for " + tenant.getTenantCode() + " to " + tenant.getStatus())
+                        .build();
+                systemAuditLogRepository.save(systemAudit);
+            }
+        } catch (Exception e) {
+            log.warn("Could not log SystemAuditLog for tenant status update: {}", e.getMessage());
+        }
+
+        return CreateTenantResponse.builder()
+                .tenantId(tenant.getTenantId())
+                .tenantCode(tenant.getTenantCode())
+                .tenantName(tenant.getTenantName())
+                .displayName(tenant.getDisplayName())
+                .schemaName(tenant.getSchemaName())
+                .status(tenant.getStatus())
+                .onboardedByAdminId(tenant.getOnboardedByAdmin() != null ? tenant.getOnboardedByAdmin().getSystemAdminId() : null)
+                .createdAt(tenant.getCreatedAt())
                 .build();
     }
 

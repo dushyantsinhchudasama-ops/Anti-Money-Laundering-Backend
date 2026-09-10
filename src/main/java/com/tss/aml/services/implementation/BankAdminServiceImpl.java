@@ -81,7 +81,7 @@ public class BankAdminServiceImpl implements BankAdminService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .phoneNumber(request.getPhoneNumber())
-                .email(request.getEmail())
+                .email(normalizedEmail)
                 .passwordHash(encodedPassword)
                 .isActive(true)
                 .mustResetPassword(true)

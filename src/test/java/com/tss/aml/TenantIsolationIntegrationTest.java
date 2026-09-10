@@ -202,7 +202,8 @@ class TenantIsolationIntegrationTest {
                 .andReturn();
 
         JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
-        assertThat(json.isArray()).isTrue();
+        assertThat(json.has("content")).isTrue();
+        assertThat(json.get("content").isArray()).isTrue();
 
         List<String> accountNumbers = json.findValuesAsText("accountNumber");
         assertThat(accountNumbers).contains("HDFC-TEST-001");
@@ -218,7 +219,8 @@ class TenantIsolationIntegrationTest {
                 .andReturn();
 
         JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
-        assertThat(json.isArray()).isTrue();
+        assertThat(json.has("content")).isTrue();
+        assertThat(json.get("content").isArray()).isTrue();
 
         List<String> accountNumbers = json.findValuesAsText("accountNumber");
         assertThat(accountNumbers).contains("ICICI-TEST-001");

@@ -99,6 +99,9 @@ class ComplianceOfficerWorkflowIntegrationTest {
     private TenantMigrationService tenantMigrationService;
 
     @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @Autowired
     private TenantRepository tenantRepository;
 
     @Autowired
@@ -219,7 +222,7 @@ class ComplianceOfficerWorkflowIntegrationTest {
         TenantContext.clear();
 
         // Create Users in public.users
-        userRepository.deleteAll();
+        jdbcTemplate.execute("TRUNCATE TABLE public.users CASCADE");
 
         hdfcBankAdmin = userRepository.save(Users.builder()
                 .tenant(tenantHdfc)

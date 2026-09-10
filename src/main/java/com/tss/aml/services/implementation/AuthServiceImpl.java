@@ -33,18 +33,10 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginRequest request) {
 
         String normalizedEmail = com.tss.aml.util.NormalizationUtils.normalizeEmail(request.getEmail());
-        String normalizedTenantCode = com.tss.aml.util.NormalizationUtils.normalizeTenantCode(request.getTenantCode());
-
-        // include tenantCode in the principal so CustomUserDetailsService can scope
-        // lookup
-        String principal = normalizedEmail;
-        if (normalizedTenantCode != null && !normalizedTenantCode.isBlank()) {
-            principal = normalizedEmail + "||" + normalizedTenantCode;
-        }
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        principal,
+                        normalizedEmail,
                         request.getPassword()
                 )
         );
@@ -98,9 +90,6 @@ public class AuthServiceImpl implements AuthService {
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail(user.getEmail());
         loginRequest.setPassword(request.getNewPassword());
-        if (user.getTenant() != null) {
-            loginRequest.setTenantCode(user.getTenant().getTenantCode());
-        }
 
         return login(loginRequest);
     }

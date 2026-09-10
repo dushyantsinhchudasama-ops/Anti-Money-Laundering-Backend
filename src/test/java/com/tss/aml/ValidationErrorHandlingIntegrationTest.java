@@ -52,8 +52,8 @@ class ValidationErrorHandlingIntegrationTest {
         loginRequest.setPassword("Password123!");
 
         MvcResult result = mockMvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Validation failed"))
                 .andExpect(jsonPath("$.message").value("Email is required."))
@@ -72,8 +72,8 @@ class ValidationErrorHandlingIntegrationTest {
         loginRequest.setPassword("Password123!");
 
         MvcResult result = mockMvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Validation failed"))
                 .andExpect(jsonPath("$.message").value("Please enter a valid email address."))
@@ -92,10 +92,11 @@ class ValidationErrorHandlingIntegrationTest {
         loginRequest.setEmail("valid.user@aml.com");
         loginRequest.setPassword("Password123!");
 
-        // Fails authentication (401 Unauthorized), NOT 400 Bad Request (Validation failed)
+        // Fails authentication (401 Unauthorized), NOT 400 Bad Request (Validation
+        // failed)
         mockMvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -111,8 +112,8 @@ class ValidationErrorHandlingIntegrationTest {
         request.setPhoneNumber("invalid-phone-xyz");
 
         MvcResult result = mockMvc.perform(post("/api/v1/admin/tenants/" + UUID.randomUUID() + "/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Validation failed"))
                 .andExpect(jsonPath("$.message").value("Please enter a valid phone number."))
@@ -134,10 +135,11 @@ class ValidationErrorHandlingIntegrationTest {
         request.setEmail("john.doe@bank.com");
         request.setPhoneNumber("+12345678901");
 
-        // Fails with IllegalArgumentException (400 "Tenant not found") in service layer, NOT 400 "Validation failed"
+        // Fails with IllegalArgumentException (400 "Tenant not found") in service
+        // layer, NOT 400 "Validation failed"
         MvcResult result = mockMvc.perform(post("/api/v1/admin/tenants/" + UUID.randomUUID() + "/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andReturn();
 
         String content = result.getResponse().getContentAsString();
@@ -149,7 +151,8 @@ class ValidationErrorHandlingIntegrationTest {
     void loginRequestContainsNoPhoneField() {
         Field[] fields = LoginRequest.class.getDeclaredFields();
         boolean hasPhoneField = Arrays.stream(fields)
-                .anyMatch(field -> field.getName().equalsIgnoreCase("phoneNumber") || field.getName().equalsIgnoreCase("mobileNumber"));
+                .anyMatch(field -> field.getName().equalsIgnoreCase("phoneNumber")
+                        || field.getName().equalsIgnoreCase("mobileNumber"));
         assertThat(hasPhoneField).isFalse();
     }
 
@@ -164,8 +167,8 @@ class ValidationErrorHandlingIntegrationTest {
                 .build();
 
         MvcResult result = mockMvc.perform(post("/auth/reset-password")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Validation failed"))
                 .andExpect(jsonPath("$.message").value("Please enter a valid email address."))

@@ -30,6 +30,10 @@ public class Notification {
     @JoinColumn(name = "recipient_id", nullable = false)
     private Users recipient;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sar_str_id")
+    private SarStr sarStr;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "event_type", nullable = false, length = 50)
     private NotificationEventType eventType;

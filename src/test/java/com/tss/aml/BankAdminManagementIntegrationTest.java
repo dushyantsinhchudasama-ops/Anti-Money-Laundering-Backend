@@ -36,13 +36,28 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import com.tss.aml.services.EmailService;
+import org.mockito.ArgumentCaptor;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 class BankAdminManagementIntegrationTest {
+
+    @MockitoBean
+    private JavaMailSender mailSender;
+
+    @MockitoSpyBean
+    private EmailService emailService;
 
     @Autowired
     private WebApplicationContext context;
@@ -80,6 +95,9 @@ class BankAdminManagementIntegrationTest {
     @Autowired
     private com.tss.aml.repositories.AlertRepository alertRepository;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     private SystemAdmin systemAdmin;
     private String systemAdminToken;
     private Tenant testTenant;
@@ -103,14 +121,7 @@ class BankAdminManagementIntegrationTest {
             TenantContext.clear();
         }
 
-        userRepository.findByEmail("officer_mgmt@hdfc.com").ifPresent(userRepository::delete);
-        userRepository.findByUserCode("OFFICER_001").ifPresent(userRepository::delete);
-        userRepository.findByEmail("officer_reset@hdfc.com").ifPresent(userRepository::delete);
-        userRepository.findByUserCode("OFFICER_RESET_01").ifPresent(userRepository::delete);
-        userRepository.findByEmail("officer_deact@hdfc.com").ifPresent(userRepository::delete);
-        userRepository.findByUserCode("OFFICER_DEACT_01").ifPresent(userRepository::delete);
-        userRepository.findByEmail("admin_mgmt@hdfc.com").ifPresent(userRepository::delete);
-        userRepository.findByUserCode("ADMIN_MGMT_001").ifPresent(userRepository::delete);
+        jdbcTemplate.execute("TRUNCATE TABLE public.users CASCADE");
 
         if (systemAdminRepository.count() == 0) {
             initializer.run(null);
@@ -201,8 +212,18 @@ class BankAdminManagementIntegrationTest {
         JsonNode createResponse = objectMapper.readTree(createResult.getResponse().getContentAsString());
         String officerId = createResponse.get("userId").asText();
         assertThat(createResponse.get("userCode").asText()).isEqualTo("OFFICER_001");
-        assertThat(createResponse.get("role").asText()).isEqualTo("COMPLIANCE_OFFICER");
-        assertThat(createResponse.get("temporaryPassword").asText()).startsWith("TmpOff@");
+        assertThat(createResponse.has("temporaryPassword")).isFalse();
+
+        ArgumentCaptor<String> tempPassCaptor1 = ArgumentCaptor.forClass(String.class);
+        verify(emailService).sendComplianceOfficerWelcomeEmail(
+                eq("officer_mgmt@hdfc.com"),
+                any(),
+                any(),
+                any(),
+                any(),
+                tempPassCaptor1.capture()
+        );
+        assertThat(tempPassCaptor1.getValue()).isNotNull().startsWith("TmpOff@");
 
         // 2. Fetch Compliance Officer by ID
         MvcResult getResult = mockMvc.perform(get("/api/v1/bank/admin/get-officer/" + officerId)
@@ -251,7 +272,15 @@ class BankAdminManagementIntegrationTest {
 
         JsonNode resetResponse = objectMapper.readTree(resetResult.getResponse().getContentAsString());
         assertThat(resetResponse.get("mustResetPassword").asBoolean()).isTrue();
-        assertThat(resetResponse.get("temporaryPassword").asText()).startsWith("TmpOff@");
+        assertThat(resetResponse.has("temporaryPassword")).isFalse();
+
+        ArgumentCaptor<String> tempPassCaptor2 = ArgumentCaptor.forClass(String.class);
+        verify(emailService).sendPasswordResetEmail(
+                eq("officer_reset@hdfc.com"),
+                any(),
+                tempPassCaptor2.capture()
+        );
+        assertThat(tempPassCaptor2.getValue()).isNotNull().startsWith("TmpOff@");
     }
 
     @Test

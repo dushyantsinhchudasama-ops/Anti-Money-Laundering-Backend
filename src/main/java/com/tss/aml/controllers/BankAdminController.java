@@ -27,10 +27,14 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import com.tss.aml.dtos.tenant.SarStrResponse;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
+import com.tss.aml.dtos.audit.AuditLogResponseDto;
+import com.tss.aml.services.interfaces.AuditLogQueryService;
 
 @CrossOrigin
 @RequiredArgsConstructor
@@ -40,6 +44,7 @@ public class BankAdminController {
     private final BankAdminService bankAdminService;
     private final AlertService alertService;
     private final CaseService caseService;
+    private final AuditLogQueryService auditLogQueryService;
 
     // --- User Management (Compliance Officers) ---
 
@@ -47,7 +52,7 @@ public class BankAdminController {
     @PreAuthorize("hasRole('BANK_ADMIN')")
     public ResponseEntity<ComplianceOfficerResponse> addComplianceOfficer(
             @Valid @RequestBody ComplianceOfficerRequest request,
-            @AuthenticationPrincipal CustomUserDetails currentUser){
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
         ComplianceOfficerResponse response = bankAdminService.createComplianceOfficer(request, currentUser);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -56,7 +61,7 @@ public class BankAdminController {
     @PreAuthorize("hasRole('BANK_ADMIN')")
     public ResponseEntity<ComplianceOfficerResponse> getComplianceOfficer(
             @PathVariable String officerId,
-            @AuthenticationPrincipal CustomUserDetails currentUser){
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
         UUID officerUuid = parseUuid(officerId);
         ComplianceOfficerResponse response = bankAdminService.getComplianceOfficer(officerUuid, currentUser);
         return ResponseEntity.ok(response);
@@ -66,9 +71,10 @@ public class BankAdminController {
     @PreAuthorize("hasRole('BANK_ADMIN')")
     public ResponseEntity<Page<ComplianceOfficerResponse>> getAllComplianceOfficerOfTenant(
             Pageable pageable,
-            @AuthenticationPrincipal CustomUserDetails currentUser){
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
         validateTenantAccess(currentUser);
-        Page<ComplianceOfficerResponse> response = bankAdminService.getAllComplianceOfficerOfTenant(currentUser.getTenantId(), pageable);
+        Page<ComplianceOfficerResponse> response = bankAdminService
+                .getAllComplianceOfficerOfTenant(currentUser.getTenantId(), pageable);
         return ResponseEntity.ok(response);
     }
 
@@ -124,7 +130,8 @@ public class BankAdminController {
             Pageable pageable,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         validateTenantAccess(currentUser);
-        Page<AlertResponse> alerts = alertService.getAlerts(severity, ruleId, status, startDate, endDate, pageable, currentUser);
+        Page<AlertResponse> alerts = alertService.getAlerts(severity, ruleId, status, startDate, endDate, pageable,
+                currentUser);
         return ResponseEntity.ok(alerts);
     }
 
@@ -199,11 +206,12 @@ public class BankAdminController {
 
     @GetMapping("/sar-str")
     @PreAuthorize("hasRole('BANK_ADMIN')")
-    public ResponseEntity<Page<com.tss.aml.dtos.tenant.SarStrResponse>> getSarStrFilingLog(
+    public ResponseEntity<Page<SarStrResponse>> getSarStrFilingLog(
             Pageable pageable,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         validateTenantAccess(currentUser);
-        Page<com.tss.aml.dtos.tenant.SarStrResponse> logPage = bankAdminService.getSarStrFilingLog(pageable, currentUser);
+        Page<com.tss.aml.dtos.tenant.SarStrResponse> logPage = bankAdminService.getSarStrFilingLog(pageable,
+                currentUser);
         return ResponseEntity.ok(logPage);
     }
 
@@ -216,8 +224,27 @@ public class BankAdminController {
         UUID sarStrUuid = parseUuid(sarStrId);
         byte[] pdfBytes = bankAdminService.getSarStrPdfForAdmin(sarStrUuid, currentUser);
         return ResponseEntity.ok()
-                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"SAR-STR-" + sarStrId + ".pdf\"")
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"SAR-STR-" + sarStrId + ".pdf\"")
                 .body(pdfBytes);
+    }
+
+    // --- Audit Trail Queries ---
+
+    @GetMapping("/audit-logs")
+    @PreAuthorize("hasRole('BANK_ADMIN')")
+    public ResponseEntity<Page<AuditLogResponseDto>> getTenantAuditLogs(
+            @RequestParam(required = false) UUID actorId,
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            Pageable pageable,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        validateTenantAccess(currentUser);
+        Page<AuditLogResponseDto> logs = auditLogQueryService.getTenantAuditLogs(actorId, entityType, action, startDate,
+                endDate, pageable, currentUser);
+        return ResponseEntity.ok(logs);
     }
 
     // --- Private Helper Methods ---

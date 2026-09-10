@@ -124,4 +124,40 @@ public class EmailServiceImpl implements EmailService {
             log.error("Failed to send password reset email to '{}': {}", userEmail, e.getMessage());
         }
     }
+
+    @Override
+    public void sendSarStrFilingEmail(
+            String adminEmail,
+            String adminFirstName,
+            String reportType,
+            String referenceNumber,
+            String caseCode,
+            String officerName
+    ) {
+        try {
+            Context context = new Context();
+            context.setVariable("adminFirstName", adminFirstName != null ? adminFirstName : "Bank Admin");
+            context.setVariable("reportType", reportType);
+            context.setVariable("referenceNumber", referenceNumber);
+            context.setVariable("caseCode", caseCode);
+            context.setVariable("officerName", officerName != null ? officerName : "Compliance Officer");
+            context.setVariable("loginUrl", loginUrl);
+
+            String htmlContent = templateEngine.process("email/tenant-welcome", context);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromAddress);
+            helper.setTo(adminEmail);
+            helper.setSubject("AML Compliance Alert: " + reportType + " Filed (" + referenceNumber + ")");
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Successfully sent SAR/STR notification email to Bank Admin '{}' for report '{}'", adminEmail, referenceNumber);
+        } catch (Exception e) {
+            log.error("Failed to send SAR/STR notification email to Bank Admin '{}' for report '{}': {}", adminEmail, referenceNumber, e.getMessage());
+            // Intentionally catch exception to ensure email delivery failure does not disrupt database transaction
+        }
+    }
 }

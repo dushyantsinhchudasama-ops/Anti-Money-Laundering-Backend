@@ -67,6 +67,7 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
     private final FinancialTransactionRepository financialTransactionRepository;
     private final AccountRepository accountRepository;
     private final SarStrRepository sarStrRepository;
+    private final com.tss.aml.services.NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -811,11 +812,13 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
         AuditLog auditLog = AuditLog.builder()
                 .actor(currentUserEntity)
                 .action("SAR_STR_FILED")
-                .entityType("SarStr")
-                .entityId(savedSarStr.getSarStrId().toString())
-                .details("Compliance Officer " + currentUserEntity.getEmail() + " filed " + savedSarStr.getReportType() + " report " + refNo + " for case " + amlCase.getCaseCode() + ". Typology: " + savedSarStr.getTypologyCategory())
+                .entityType("CASE")
+                .entityId(amlCase.getCaseId().toString())
+                .details("Compliance Officer " + currentUserEntity.getEmail() + " filed " + savedSarStr.getReportType() + " report " + refNo + " (SarStr ID: " + savedSarStr.getSarStrId() + ") for case " + amlCase.getCaseCode() + ". Typology: " + savedSarStr.getTypologyCategory())
                 .build();
         auditLogRepository.save(auditLog);
+
+        notificationService.notifyBankAdminsOfSarStrFiling(savedSarStr, currentUserEntity);
 
         log.info("Compliance Officer '{}' filed {} report '{}' for Case '{}'",
                 currentUserEntity.getEmail(), savedSarStr.getReportType(), refNo, amlCase.getCaseCode());

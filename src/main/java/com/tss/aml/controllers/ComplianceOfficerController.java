@@ -20,7 +20,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.tss.aml.dtos.tenant.CaseNoteCreateRequest;
 import com.tss.aml.dtos.tenant.CaseNoteResponse;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,6 +37,7 @@ import java.util.UUID;
 import com.tss.aml.dtos.audit.AuditLogResponseDto;
 import com.tss.aml.services.interfaces.AuditLogQueryService;
 
+@CrossOrigin
 @RestController
 @RequestMapping("/api/v1/compliance")
 @PreAuthorize("hasRole('COMPLIANCE_OFFICER')")

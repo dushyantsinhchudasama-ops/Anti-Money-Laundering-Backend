@@ -36,6 +36,7 @@ import java.util.UUID;
 import com.tss.aml.dtos.audit.AuditLogResponseDto;
 import com.tss.aml.services.interfaces.AuditLogQueryService;
 
+@CrossOrigin
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/bank/admin")

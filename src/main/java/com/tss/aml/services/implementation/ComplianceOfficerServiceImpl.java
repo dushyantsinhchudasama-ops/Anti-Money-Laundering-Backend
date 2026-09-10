@@ -608,7 +608,13 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
         AmlCase amlCase = amlCaseRepository.findById(caseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Case with ID " + caseId + " not found"));
 
-        if (amlCase.getAssignedTo() == null || !amlCase.getAssignedTo().getUserId().equals(currentUser.getUserId())) {
+        Users currentUserEntity = userRepository.findById(currentUser.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Logged-in user not found: " + currentUser.getUserId()));
+
+        if (amlCase.getAssignedTo() == null) {
+            amlCase.setAssignedTo(currentUserEntity);
+            amlCaseRepository.save(amlCase);
+        } else if (!amlCase.getAssignedTo().getUserId().equals(currentUser.getUserId())) {
             throw new AccessDeniedException("Access denied: Case is not assigned to you.");
         }
 
@@ -620,16 +626,9 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
             throw new IllegalStateException("Cannot close case with status: " + amlCase.getStatus() + ". Case is already closed.");
         }
 
-        Users currentUserEntity = userRepository.findById(currentUser.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Logged-in user not found: " + currentUser.getUserId()));
-
-        if (amlCase.getStatus() == CaseStatus.OPEN) {
+        if (amlCase.getStatus() == CaseStatus.OPEN || amlCase.getStatus() == CaseStatus.ESCALATED) {
             amlCase.setStatus(CaseStatus.IN_PROGRESS);
             amlCaseRepository.save(amlCase);
-        }
-
-        if (amlCase.getStatus() != CaseStatus.IN_PROGRESS) {
-            throw new IllegalStateException("Cannot close case with status: " + amlCase.getStatus() + ". Case is not in progress.");
         }
 
         if (!caseNoteRepository.existsByAmlCase_CaseId(caseId)) {
@@ -662,17 +661,23 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public SarStrPreviewResponse getSarStrPreview(UUID caseId, CustomUserDetails currentUser) {
         AmlCase amlCase = amlCaseRepository.findById(caseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Case with ID " + caseId + " not found"));
 
-        if (amlCase.getAssignedTo() == null || !amlCase.getAssignedTo().getUserId().equals(currentUser.getUserId())) {
+        Users currentUserEntity = userRepository.findById(currentUser.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Logged-in user not found: " + currentUser.getUserId()));
+
+        if (amlCase.getAssignedTo() == null) {
+            amlCase.setAssignedTo(currentUserEntity);
+            amlCaseRepository.save(amlCase);
+        } else if (!amlCase.getAssignedTo().getUserId().equals(currentUser.getUserId())) {
             throw new AccessDeniedException("Access denied: Case is not assigned to you.");
         }
 
-        if (amlCase.getStatus() != CaseStatus.IN_PROGRESS) {
-            throw new IllegalStateException("Cannot preview SAR/STR for case with status: " + amlCase.getStatus() + ". Case must be IN_PROGRESS.");
+        if (amlCase.getStatus() == CaseStatus.CLOSED_NO_ACTION || amlCase.getStatus() == CaseStatus.CLOSED_SAR_FILED) {
+            throw new IllegalStateException("Cannot preview SAR/STR for closed case with status: " + amlCase.getStatus());
         }
 
         Account account = null;
@@ -712,6 +717,23 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
             }
         }
 
+        java.math.BigDecimal totalAlertAmt = txns.stream()
+                .map(t -> t.getAmount() != null ? t.getAmount() : java.math.BigDecimal.ZERO)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        String primaryAccNo = account != null ? account.getAccountNumber() : "N/A";
+        String primaryAccHolder = account != null ? account.getAccountHolderName() : "Unknown Account Holder";
+        String bank = account != null ? account.getBankName() : "Primary Institution";
+        int alertCount = alerts.size();
+        String rulesSummary = alerts.stream()
+                .map(a -> a.getRuleCode() != null ? a.getRuleCode() + " (" + a.getRuleName() + ")" : "ALERT")
+                .distinct()
+                .collect(Collectors.joining(", "));
+        if (rulesSummary.isEmpty()) {
+            rulesSummary = "Observed transaction patterns violating regulatory threshold and rule engine policies.";
+        }
+        String narrative = "Suspicious activity detected on account " + primaryAccNo + " (" + primaryAccHolder + ") triggering " + alertCount + " alert(s) totaling $" + totalAlertAmt + " at " + bank + ".";
+
         List<String> reportTypes = List.of(SarStrType.SAR.name(), SarStrType.STR.name());
         List<String> typologies = List.of(
                 FiuTypologyCategory.STRUCTURING.name(),
@@ -735,10 +757,16 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
                 .accountId(account != null ? account.getAccountId() : null)
                 .accountNumber(account != null ? account.getAccountNumber() : null)
                 .accountHolderName(account != null ? account.getAccountHolderName() : null)
+                .primaryAccountNo(primaryAccNo)
+                .primaryAccountHolder(primaryAccHolder)
                 .accountType(account != null && account.getAccountType() != null ? account.getAccountType().name() : null)
-                .bankName(account != null ? account.getBankName() : null)
+                .bankName(bank)
                 .countryCode(account != null ? account.getCountryCode() : null)
                 .riskRating(account != null && account.getRiskRating() != null ? account.getRiskRating().name() : null)
+                .totalAlertAmount(totalAlertAmt)
+                .alertCount(alertCount)
+                .triggeringRulesSummary(rulesSummary)
+                .suggestedNarrative(narrative)
                 .transactions(txns)
                 .triggeredAlerts(alerts)
                 .supportedReportTypes(reportTypes)
@@ -752,7 +780,13 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
         AmlCase amlCase = amlCaseRepository.findById(caseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Case with ID " + caseId + " not found"));
 
-        if (amlCase.getAssignedTo() == null || !amlCase.getAssignedTo().getUserId().equals(currentUser.getUserId())) {
+        Users currentUserEntity = userRepository.findById(currentUser.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Logged-in user not found: " + currentUser.getUserId()));
+
+        if (amlCase.getAssignedTo() == null) {
+            amlCase.setAssignedTo(currentUserEntity);
+            amlCaseRepository.save(amlCase);
+        } else if (!amlCase.getAssignedTo().getUserId().equals(currentUser.getUserId())) {
             throw new AccessDeniedException("Access denied: Case is not assigned to you.");
         }
 
@@ -760,16 +794,9 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
             throw new IllegalStateException("Cannot file SAR/STR for closed case with status: " + amlCase.getStatus());
         }
 
-        Users currentUserEntity = userRepository.findById(currentUser.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Logged-in user not found: " + currentUser.getUserId()));
-
-        if (amlCase.getStatus() == CaseStatus.OPEN) {
+        if (amlCase.getStatus() == CaseStatus.OPEN || amlCase.getStatus() == CaseStatus.ESCALATED) {
             amlCase.setStatus(CaseStatus.IN_PROGRESS);
             amlCaseRepository.save(amlCase);
-        }
-
-        if (amlCase.getStatus() != CaseStatus.IN_PROGRESS) {
-            throw new IllegalStateException("Cannot file SAR/STR for case with status: " + amlCase.getStatus());
         }
 
         if (!caseNoteRepository.existsByAmlCase_CaseId(caseId)) {
@@ -806,7 +833,8 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
             throw new IllegalArgumentException("Supporting evidence is required");
         }
 
-        String refNo = "SAR-2026-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String prefix = request.getReportType() == com.tss.aml.enums.SarStrType.STR ? "STR" : "SAR";
+        String refNo = prefix + "-2026-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         String pdfRef = refNo + ".pdf";
 
         SarStr sarStr = SarStr.builder()
@@ -849,12 +877,17 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public byte[] getSarStrPdf(UUID caseId, CustomUserDetails currentUser) {
         AmlCase amlCase = amlCaseRepository.findById(caseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Case with ID " + caseId + " not found"));
 
-        if (amlCase.getAssignedTo() == null || !amlCase.getAssignedTo().getUserId().equals(currentUser.getUserId())) {
+        if (amlCase.getAssignedTo() == null) {
+            Users currentUserEntity = userRepository.findById(currentUser.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Logged-in user not found: " + currentUser.getUserId()));
+            amlCase.setAssignedTo(currentUserEntity);
+            amlCaseRepository.save(amlCase);
+        } else if (!amlCase.getAssignedTo().getUserId().equals(currentUser.getUserId())) {
             throw new AccessDeniedException("Access denied: Case is not assigned to you.");
         }
 

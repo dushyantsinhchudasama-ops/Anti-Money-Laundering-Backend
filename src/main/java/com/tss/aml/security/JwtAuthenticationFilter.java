@@ -1,5 +1,7 @@
 package com.tss.aml.security;
 
+import com.tss.aml.entities.system.Tenant;
+import com.tss.aml.enums.TenantStatus;
 import com.tss.aml.tenant.TenantContext;
 import com.tss.aml.tenant.TenantService;
 import jakarta.servlet.FilterChain;
@@ -48,12 +50,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UUID tenantId = jwtTokenProvider.getTenantId(token);
 
                 if (tenantId != null) {
+                    try {
+                        Tenant tenant = tenantService.getTenant(tenantId);
+                        if (tenant != null) {
+                            if (tenant.getStatus() == TenantStatus.SUSPENDED) {
+                                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                response.setContentType("application/json");
+                                response.getWriter().write("{\"error\":\"Institution suspended Please contact Admin!\",\"message\":\"Institution suspended Please contact Admin!\"}");
+                                return;
+                            }
+                            if (tenant.getStatus() == TenantStatus.OFFBOARDED) {
+                                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                response.setContentType("application/json");
+                                response.getWriter().write("{\"error\":\"Bad credentials\",\"message\":\"Bad credentials\"}");
+                                return;
+                            }
+                        }
+                    } catch (Exception ignored) {
+                    }
+
                     String schemaName = tenantService.getSchemaName(tenantId);
-                    TenantContext.setCurrentTenant(schemaName);
-                    log.debug(
-                            "Authenticated request for tenant schema: {}",
-                            schemaName
-                    );
+                    if (schemaName != null) {
+                        TenantContext.setCurrentTenant(schemaName);
+                        log.debug(
+                                "Authenticated request for tenant schema: {}",
+                                schemaName
+                        );
+                    }
                 }
 
                 UserDetails userDetails =

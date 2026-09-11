@@ -18,6 +18,10 @@ import java.util.Optional;
 
 import static com.tss.aml.util.NormalizationUtils.normalizeEmail;
 
+import com.tss.aml.enums.TenantStatus;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
@@ -49,7 +53,18 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         // Otherwise check UserRepository for tenant users
         Users user = usersRepository.findByEmail(lookupEmail)
-                .orElseThrow(() -> new UsernameNotFoundException("Invalid email or password"));
+                .orElseThrow(() -> new BadCredentialsException("Bad credentials"));
+
+        if (user.getTenant() != null) {
+            TenantStatus tenantStatus = user.getTenant().getStatus();
+            if (tenantStatus == TenantStatus.OFFBOARDED) {
+                throw new BadCredentialsException("Bad credentials");
+            }
+            if (tenantStatus == TenantStatus.SUSPENDED) {
+                throw new DisabledException("Institution suspended Please contact Admin!");
+            }
+        }
+
         return buildCustomUserDetails(user);
     }
 

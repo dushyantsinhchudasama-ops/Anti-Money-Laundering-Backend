@@ -50,7 +50,8 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
 
         SystemAdmin currAdmin = getAuthenticatedSystemAdmin();
 
-        String ruleCode = "RULE-" + request.getTypology().name() + "-" + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
+        String ruleCode = "RULE-" + request.getTypology().name() + "-"
+                + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
 
         Rule rule = Rule.builder()
                 .ruleCode(ruleCode)
@@ -117,7 +118,8 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
             throw new IllegalStateException("Rule is not active: " + ruleId);
         }
 
-        if (bankRuleAssignmentRepository.existsByTenant_TenantIdAndRule_RuleId(tenant.getTenantId(), rule.getRuleId())) {
+        if (bankRuleAssignmentRepository.existsByTenant_TenantIdAndRule_RuleId(tenant.getTenantId(),
+                rule.getRuleId())) {
             throw new IllegalArgumentException("Rule is already assigned to tenant: " + tenant.getTenantId());
         }
 
@@ -136,7 +138,8 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
                     .action("RULE_ASSIGNED")
                     .entityType("RULE_ASSIGNMENT")
                     .entityId(assignment.getAssignmentId().toString())
-                    .details("Assigned rule " + rule.getRuleCode() + " to tenant " + tenant.getTenantCode() + " (" + tenant.getTenantId() + ")")
+                    .details("Assigned rule " + rule.getRuleCode() + " to tenant " + tenant.getTenantCode() + " ("
+                            + tenant.getTenantId() + ")")
                     .build();
             systemAuditLogRepository.save(systemAudit);
         }
@@ -159,8 +162,10 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
     @Override
     @Transactional
     public void unassignRuleFromTenant(UUID ruleId, UUID tenantId) {
-        BankRuleAssignment assignment = bankRuleAssignmentRepository.findByTenant_TenantIdAndRule_RuleId(tenantId, ruleId)
-                .orElseThrow(() -> new IllegalArgumentException("Assignment not found for tenant " + tenantId + " and rule " + ruleId));
+        BankRuleAssignment assignment = bankRuleAssignmentRepository
+                .findByTenant_TenantIdAndRule_RuleId(tenantId, ruleId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Assignment not found for tenant " + tenantId + " and rule " + ruleId));
 
         SystemAdmin admin = getAuthenticatedSystemAdmin();
         bankRuleAssignmentRepository.delete(assignment);
@@ -171,7 +176,8 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
                     .action("RULE_UNASSIGNED")
                     .entityType("RULE_ASSIGNMENT")
                     .entityId(assignment.getAssignmentId().toString())
-                    .details("Unassigned rule " + assignment.getRule().getRuleCode() + " from tenant " + assignment.getTenant().getTenantCode())
+                    .details("Unassigned rule " + assignment.getRule().getRuleCode() + " from tenant "
+                            + assignment.getTenant().getTenantCode())
                     .build();
             systemAuditLogRepository.save(systemAudit);
         }
@@ -181,8 +187,7 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
     @Transactional
     public CreateRuleResponse updateRule(UUID ruleId, UpdateRuleRequest request) {
         Rule rule = ruleRepository.findById(ruleId).orElseThrow(
-                () -> new ResourceNotFoundException("Rule having Id: " + ruleId + " not found.")
-        );
+                () -> new ResourceNotFoundException("Rule having Id: " + ruleId + " not found."));
 
         ruleParameterValidationService.validate(rule.getTypology(), request.getParameters());
 
@@ -236,17 +241,17 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
         Page<Rule> rulePage = ruleRepository.findAll(pageable);
 
         return rulePage.map(
-            rule -> CreateRuleResponse.builder()
-                .ruleId(rule.getRuleId())
-                .ruleCode(rule.getRuleCode())
-                .ruleName(rule.getRuleName())
-                .description(rule.getDescription())
-                .typology(rule.getTypology())
-                .parameters(rule.getParameters())
-                .defaultSeverity(rule.getDefaultSeverity())
-                .status(rule.getStatus())
-                .isActive(rule.getIsDeleted() == null || !rule.getIsDeleted())
-                .build()
+                rule -> CreateRuleResponse.builder()
+                        .ruleId(rule.getRuleId())
+                        .ruleCode(rule.getRuleCode())
+                        .ruleName(rule.getRuleName())
+                        .description(rule.getDescription())
+                        .typology(rule.getTypology())
+                        .parameters(rule.getParameters())
+                        .defaultSeverity(rule.getDefaultSeverity())
+                        .status(rule.getStatus())
+                        .isActive(rule.getIsDeleted() == null || !rule.getIsDeleted())
+                        .build()
 
         );
     }
@@ -260,7 +265,8 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
         Object principal = auth.getPrincipal();
         if (principal instanceof CustomUserDetails userDetails) {
             return systemAdminRepository.findById(userDetails.getUserId())
-                    .orElseThrow(() -> new IllegalStateException("Authenticated System Admin user not found: " + userDetails.getUserId()));
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Authenticated System Admin user not found: " + userDetails.getUserId()));
         } else if (principal instanceof SystemAdmin admin) {
             return admin;
         }
@@ -277,7 +283,8 @@ public class SystemAdminServiceImpl implements ISystemAdminService {
                 .ruleId(assignment.getRule().getRuleId())
                 .ruleCode(assignment.getRule().getRuleCode())
                 .ruleName(assignment.getRule().getRuleName())
-                .assignedByAdminId(assignment.getAssignedBy() != null ? assignment.getAssignedBy().getSystemAdminId() : null)
+                .assignedByAdminId(
+                        assignment.getAssignedBy() != null ? assignment.getAssignedBy().getSystemAdminId() : null)
                 .assignedByEmail(assignment.getAssignedBy() != null ? assignment.getAssignedBy().getEmail() : null)
                 .assignedAt(assignment.getAssignedAt())
                 .build();

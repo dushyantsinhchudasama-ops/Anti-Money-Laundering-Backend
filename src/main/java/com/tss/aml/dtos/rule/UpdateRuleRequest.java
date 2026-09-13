@@ -28,4 +28,3 @@ public class UpdateRuleRequest {
     @Size(min = 1, message = "Parameters cannot be empty")
     private Map<String, Object> parameters;
 }
-

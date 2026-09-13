@@ -1,5 +1,6 @@
 package com.tss.aml.dtos.tenant;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.tss.aml.enums.SarStrType;
 import lombok.AllArgsConstructor;
@@ -30,6 +31,7 @@ public class SarStrResponse {
     private UUID filedById;
     private String filedByName;
     private String filedByEmail;
+    @JsonAlias({"filedAt"})
     private LocalDateTime submittedAt;
 
     // Subject & Account Information

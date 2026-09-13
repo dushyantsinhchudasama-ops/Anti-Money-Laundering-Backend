@@ -190,22 +190,24 @@ public class BankAdminServiceImpl implements BankAdminService {
         complianceOfficer.setIsActive(false);
         complianceOfficer = userRepository.save(complianceOfficer);
 
-        Users bankAdminUser = userRepository.findById(currentUser.getUserId()).orElse(null);
-        if (bankAdminUser != null) {
-            AuditLog auditLog = AuditLog.builder()
-                    .actor(bankAdminUser)
-                    .action("COMPLIANCE_OFFICER_DEACTIVATED")
-                    .entityType("USER")
-                    .entityId(complianceOfficer.getUserId().toString())
-                    .details("Deactivated Compliance Officer user " + complianceOfficer.getEmail() + " ("
-                            + complianceOfficer.getUserId() + ")")
-                    .build();
-            auditLogRepository.save(auditLog);
-        }
+        Users bankAdminUser = userRepository.findById(currentUser.getUserId()).orElseThrow(
+                () -> new ResourceNotFoundException("Current user not found.")
+
+        );
+
+        AuditLog auditLog = AuditLog.builder()
+                .actor(bankAdminUser)
+                .action("COMPLIANCE_OFFICER_DEACTIVATED")
+                .entityType("USER")
+                .entityId(complianceOfficer.getUserId().toString())
+                .details("Deactivated Compliance Officer user " + complianceOfficer.getEmail() + " ("
+                        + complianceOfficer.getUserId() + ")")
+                .build();
+        auditLogRepository.save(auditLog);
 
         String tenantSchema = complianceOfficer.getTenant() != null ? complianceOfficer.getTenant().getSchemaName()
                 : null;
-        if (tenantSchema == null && currentUser != null && currentUser.getTenantId() != null) {
+        if (tenantSchema == null && currentUser.getTenantId() != null) {
             tenantSchema = tenantService.getSchemaName(currentUser.getTenantId());
         }
 
@@ -215,21 +217,16 @@ public class BankAdminServiceImpl implements BankAdminService {
                 TenantContext.setCurrentTenant(tenantSchema);
             }
 
-            if (bankAdminUser == null) {
-                bankAdminUser = userRepository.findById(currentUser.getUserId()).orElse(null);
-            }
-            if (bankAdminUser != null) {
-                List<CaseStatus> closedStatuses = List.of(CaseStatus.CLOSED_SAR_FILED, CaseStatus.CLOSED_NO_ACTION);
-                List<AmlCase> openCases = amlCaseRepository.findOpenCasesByAssignedToUserId(officerId, closedStatuses);
-                if (!openCases.isEmpty()) {
-                    for (AmlCase amlCase : openCases) {
-                        amlCase.setAssignedTo(bankAdminUser);
-                    }
-                    amlCaseRepository.saveAll(openCases);
-                    log.info("Reassigned {} open cases from deactivated CO '{}' to Bank Admin '{}'",
-                            openCases.size(), complianceOfficer.getEmail(), bankAdminUser.getEmail());
+            List<CaseStatus> closedStatuses = List.of(CaseStatus.CLOSED_SAR_FILED, CaseStatus.CLOSED_NO_ACTION);
+            List<AmlCase> openCases = amlCaseRepository.findOpenCasesByAssignedToUserId(officerId, closedStatuses);
+
+                for (AmlCase amlCase : openCases) {
+                    amlCase.setAssignedTo(bankAdminUser);
                 }
-            }
+                amlCaseRepository.saveAll(openCases);
+                log.info("Reassigned {} open cases from deactivated CO '{}' to Bank Admin '{}'",
+                        openCases.size(), complianceOfficer.getEmail(), bankAdminUser.getEmail());
+
         } finally {
             if (previousTenantSchema != null) {
                 TenantContext.setCurrentTenant(previousTenantSchema);

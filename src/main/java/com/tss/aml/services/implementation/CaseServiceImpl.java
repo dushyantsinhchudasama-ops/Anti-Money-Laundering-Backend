@@ -171,10 +171,6 @@ public class CaseServiceImpl implements CaseService {
         }
 
         Users previousAssignee = amlCase.getAssignedTo();
-        if (previousAssignee == null) {
-            throw new IllegalStateException(
-                    "Cannot reassign an unassigned case: " + amlCase.getCaseCode() + ". Case must be assigned first.");
-        }
 
         Users newCO = userRepository
                 .findByUserIdAndTenant_TenantCode(request.getNewAssigneeId(), currentUser.getTenantCode())
@@ -190,7 +186,7 @@ public class CaseServiceImpl implements CaseService {
                     "Cannot reassign case to an inactive Compliance Officer: " + newCO.getEmail());
         }
 
-        if (previousAssignee.getUserId().equals(newCO.getUserId())) {
+        if (previousAssignee != null && previousAssignee.getUserId().equals(newCO.getUserId())) {
             throw new IllegalArgumentException(
                     "Cannot reassign case to the current Compliance Officer: " + newCO.getEmail());
         }
@@ -217,7 +213,8 @@ public class CaseServiceImpl implements CaseService {
                 .entityType("CASE")
                 .entityId(amlCase.getCaseId().toString())
                 .details("Reassigned case " + amlCase.getCaseCode() + " from Compliance Officer " +
-                        previousAssignee.getEmail() + " (" + previousAssignee.getUserId() + ") to Compliance Officer " +
+                        (previousAssignee != null ? previousAssignee.getEmail() + " (" + previousAssignee.getUserId() + ")" : "Unassigned") +
+                        " to Compliance Officer " +
                         newCO.getEmail() + " (" + newCO.getUserId() + ")" +
                         (request.getReason() != null && !request.getReason().isBlank()
                                 ? ". Reason: " + request.getReason()
@@ -226,8 +223,9 @@ public class CaseServiceImpl implements CaseService {
         auditLogRepository.save(auditLog);
 
         log.info("Reassigned Case '{}' (ID: {}) from CO '{}' to CO '{}' by Bank Admin '{}'",
-                amlCase.getCaseCode(), amlCase.getCaseId(), previousAssignee.getEmail(), newCO.getEmail(),
-                currentUser.getUsername());
+                amlCase.getCaseCode(), amlCase.getCaseId(),
+                previousAssignee != null ? previousAssignee.getEmail() : "Unassigned",
+                newCO.getEmail(), currentUser.getUsername());
 
         return mapToCaseResponse(amlCase);
     }

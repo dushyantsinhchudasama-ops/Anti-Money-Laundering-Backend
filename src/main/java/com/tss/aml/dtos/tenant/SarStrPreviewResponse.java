@@ -1,5 +1,6 @@
 package com.tss.aml.dtos.tenant;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.tss.aml.enums.CaseStatus;
 import lombok.AllArgsConstructor;
@@ -26,12 +27,21 @@ public class SarStrPreviewResponse {
 
     // Pre-populated Account / Customer Subject Information
     private UUID accountId;
+    @JsonAlias({"primaryAccountNo"})
     private String accountNumber;
+    @JsonAlias({"primaryAccountHolder"})
     private String accountHolderName;
     private String accountType;
     private String bankName;
     private String countryCode;
     private String riskRating;
+
+    private String primaryAccountNo;
+    private String primaryAccountHolder;
+    private BigDecimal totalAlertAmount;
+    private Integer alertCount;
+    private String triggeringRulesSummary;
+    private String suggestedNarrative;
 
     // Pre-populated Triggering & Related Transactions
     private List<TransactionSummaryDto> transactions;

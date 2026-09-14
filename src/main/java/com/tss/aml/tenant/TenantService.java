@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.tss.aml.util.NormalizationUtils.normalizeTenantCode;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -40,7 +42,7 @@ public class TenantService {
     private final com.tss.aml.repositories.SystemAuditLogRepository systemAuditLogRepository;
 
     public CreateTenantResponse onboardTenant(CreateTenantRequest request) {
-        String normalizedTenantCode = com.tss.aml.util.NormalizationUtils.normalizeTenantCode(request.getTenantCode());
+        String normalizedTenantCode = normalizeTenantCode(request.getTenantCode());
         if (tenantRepository.existsByTenantCode(normalizedTenantCode)) {
             throw new IllegalArgumentException("Tenant code already exists: " + request.getTenantCode());
         }

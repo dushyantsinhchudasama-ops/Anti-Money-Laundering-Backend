@@ -20,11 +20,7 @@ public class TenantMigrationService {
     private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
-    /**
-     * Programmatically runs Flyway migration for a dynamically specified tenant schema.
-     *
-     * @param schemaName the name of the tenant schema (e.g. tenant_hdfc)
-     */
+
     public void migrateTenantSchema(String schemaName) {
         validateSchemaName(schemaName);
 

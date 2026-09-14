@@ -12,7 +12,6 @@ public final class TenantContext {
         if (tenant == null || tenant.isBlank()) {
             throw new IllegalArgumentException("Tenant cannot be null or blank");
         }
-
         CURRENT_TENANT.set(tenant);
     }
 

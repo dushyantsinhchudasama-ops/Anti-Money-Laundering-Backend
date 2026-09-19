@@ -20,16 +20,11 @@ public class TenantMigrationService {
     private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
-    /**
-     * Programmatically runs Flyway migration for a dynamically specified tenant schema.
-     *
-     * @param schemaName the name of the tenant schema (e.g. tenant_hdfc)
-     */
     public void migrateTenantSchema(String schemaName) {
         validateSchemaName(schemaName);
 
         log.info("Ensuring tenant schema exists: {}", schemaName);
-        jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS " + schemaName);
+        //jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS " + schemaName);
 
         log.info("Executing Flyway tenant migration for schema: {}", schemaName);
         Flyway flyway = Flyway.configure()
@@ -39,6 +34,7 @@ public class TenantMigrationService {
                 .defaultSchema(schemaName)
                 .baselineOnMigrate(true)
                 .validateOnMigrate(false)
+                .createSchemas(true)
                 .load();
 
         MigrateResult result = flyway.migrate();

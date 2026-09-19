@@ -5,9 +5,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-/**
- * Row/field-level schema validation error for a rejected batch (SRS 3.2.3).
- */
+
 @Getter
 @Setter
 @Entity

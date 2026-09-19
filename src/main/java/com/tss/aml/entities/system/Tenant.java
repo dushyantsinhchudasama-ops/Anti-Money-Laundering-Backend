@@ -10,12 +10,7 @@ import lombok.experimental.SuperBuilder;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * A registered financial institution (Bank) — an isolated tenant (SRS 3.1.3).
- * Tenant-scoped data (users, transactions, alerts, cases...) lives in this bank's
- * own database schema ({@link #schemaName}), resolved at runtime via
- * TenantIdentifierResolver — it is NOT modelled as JPA relations from this entity.
- */
+
 @NoArgsConstructor
 @Getter @Setter
 @Entity

@@ -24,9 +24,7 @@ import org.springframework.stereotype.Component;
 public class TenantIdentifierResolver
         implements CurrentTenantIdentifierResolver<String> {
 
-    /**
-     * Default schema fallback used during Hibernate bootstrap or non-tenant execution context.
-     */
+
     private static final String DEFAULT_TENANT = "public";
 
     @Override

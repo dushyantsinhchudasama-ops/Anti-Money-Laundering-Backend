@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Immutable snapshot of a Rule change (SRS 3.1.2 — "full version history of all rule changes").
+ * Immutable snapshot of a Rule change .
  */
 @Getter
 @Setter

@@ -7,10 +7,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * A case escalation event (SRS 3.3.5). Escalating does NOT close the case —
- * the case remains active and under investigation.
- */
+
 @Getter
 @Setter
 @Entity

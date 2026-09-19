@@ -13,11 +13,7 @@ import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * The Suspicious Activity / Transaction Report (SRS 3.3.6) — the primary regulatory
- * output of the investigation process. Permanently linked to its originating case;
- * cannot be deleted once filed (SRS 4.4).
- */
+
 @Getter
 @Setter
 @Entity

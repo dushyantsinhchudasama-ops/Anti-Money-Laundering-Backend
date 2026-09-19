@@ -9,13 +9,16 @@ import com.tss.aml.entities.system.Tenant;
 import com.tss.aml.entities.system.Users;
 import com.tss.aml.enums.TenantStatus;
 import com.tss.aml.enums.UserRole;
+import com.tss.aml.exceptions.TenantAlreadyExistsException;
 import com.tss.aml.repositories.SystemAdminRepository;
 import com.tss.aml.repositories.TenantRepository;
 import com.tss.aml.repositories.UserRepository;
 import com.tss.aml.security.CustomUserDetails;
 import com.tss.aml.services.TenantMigrationService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -39,6 +42,7 @@ public class TenantService {
     private final com.tss.aml.services.EmailService emailService;
     private final com.tss.aml.repositories.SystemAuditLogRepository systemAuditLogRepository;
 
+//    @Transactional
     public CreateTenantResponse onboardTenant(CreateTenantRequest request) {
         String normalizedTenantCode = com.tss.aml.util.NormalizationUtils.normalizeTenantCode(request.getTenantCode());
         if (tenantRepository.existsByTenantCode(normalizedTenantCode)) {
@@ -58,7 +62,12 @@ public class TenantService {
                 .onboardedByAdmin(admin)
                 .build();
 
-        tenant = tenantRepository.save(tenant);
+        try {
+            tenant = tenantRepository.save(tenant);
+        } catch (DataIntegrityViolationException e) {
+//            System.out.println("hii thre "+e.getMessage() + " puru");
+            throw new TenantAlreadyExistsException("Schema for this tenant code already exist : " + tenant.getSchemaName());
+        }
 
         try {
             tenantMigrationService.migrateTenantSchema(schemaName);

@@ -6,11 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Direct assignment of an Active Rule to a Bank (SRS 3.1.3).
- * Replaces the old Scenario/TenantScenarioMapping indirection — the SRS only
- * describes a flat Bank -> Rule relationship, nothing richer.
- */
+
 @Getter
 @Setter
 @Entity

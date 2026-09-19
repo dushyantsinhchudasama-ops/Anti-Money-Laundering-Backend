@@ -1,7 +1,7 @@
 package com.tss.aml.enums;
 
 /**
- * Standard FATF/FIU typology categories for regulatory SAR/STR reporting (SRS 3.3.6 / 4.2).
+ * Standard FATF/FIU typology categories for regulatory SAR/STR reporting
  */
 public enum FiuTypologyCategory {
     STRUCTURING,

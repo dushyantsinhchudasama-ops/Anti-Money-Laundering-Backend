@@ -9,9 +9,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * A notification event delivered to a tenant user, in-app or by email (SRS 4.1).
- */
+
 @Getter
 @Setter
 @Entity

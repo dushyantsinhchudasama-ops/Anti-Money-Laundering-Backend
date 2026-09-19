@@ -16,10 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * A codified AML typology rule (SRS 3.1.2). Rules are created and versioned by the
- * AML System Admin, then assigned to individual Banks via {@link BankRuleAssignment}.
- */
+
 @Getter @Setter
 @Entity
 @Table(name = "rules", schema = "public")

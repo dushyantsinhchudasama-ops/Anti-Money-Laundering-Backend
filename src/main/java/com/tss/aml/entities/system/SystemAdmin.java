@@ -45,7 +45,7 @@ public class SystemAdmin extends BaseEntity {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    // Account lockout (SRS 3.1.1 — lock after 5 consecutive failed attempts)
+    // Account lockout
     @Column(name = "failed_login_count", nullable = false)
     private Integer failedLoginCount = 0;
 

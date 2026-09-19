@@ -7,10 +7,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Tenant-scoped immutable audit trail (SRS 4.3). Every user action within this
- * bank is logged here — append-only, exportable per case, never editable/deletable.
- */
+
 @Getter
 @Setter
 @Entity

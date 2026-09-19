@@ -10,10 +10,6 @@ import lombok.experimental.SuperBuilder;
 
 import java.util.UUID;
 
-/**
- * A system-generated alert raised when a transaction matches a rule (SRS 3.1.2 / 4.4).
- * Alerts are never manually created or deleted by any actor.
- */
 @Getter
 @Setter
 @Entity

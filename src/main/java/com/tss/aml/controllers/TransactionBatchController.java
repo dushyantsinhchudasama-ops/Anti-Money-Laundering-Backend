@@ -5,6 +5,8 @@ import com.tss.aml.enums.BatchStatus;
 import com.tss.aml.security.CustomUserDetails;
 import com.tss.aml.services.interfaces.BatchIngestionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +43,18 @@ public class TransactionBatchController {
         return ResponseEntity.status(status).body(response);
     }
 
+    @GetMapping
+    @PreAuthorize("hasAnyRole('BANK_ADMIN')")
+    public ResponseEntity<Page<BatchUploadResponseDto>> getAllBatches(
+            Pageable pageable,
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        validateAuthenticatedTenantUser(currentUser);
+
+        Page<BatchUploadResponseDto> response = batchIngestionService.getAllBatchesForTenant(pageable, currentUser);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/{batchId}")
     @PreAuthorize("hasAnyRole('BANK_ADMIN', 'COMPLIANCE_OFFICER')")
     public ResponseEntity<BatchUploadResponseDto> getBatchDetails(
@@ -65,3 +79,4 @@ public class TransactionBatchController {
         }
     }
 }
+

@@ -121,4 +121,31 @@ class TransactionBatchSecurityTest {
         assertNotNull(response.getBody());
         assertEquals("BATCH-001", response.getBody().getBatchCode());
     }
+
+    @Test
+    void testGetAllBatches_returnsPagedBatchesForTenant() {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        BatchUploadResponseDto mockBatch = BatchUploadResponseDto.builder()
+                .batchId(UUID.randomUUID())
+                .batchCode("BATCH-002")
+                .fileReference("transactions.xlsx")
+                .status(BatchStatus.PROCESSED_ALERTS_GENERATED)
+                .totalRecords(50)
+                .alertsGeneratedCount(3)
+                .build();
+
+        org.springframework.data.domain.Page<BatchUploadResponseDto> mockPage =
+                new org.springframework.data.domain.PageImpl<>(List.of(mockBatch), pageable, 1);
+
+        when(batchIngestionService.getAllBatchesForTenant(eq(pageable), any(CustomUserDetails.class))).thenReturn(mockPage);
+
+        ResponseEntity<org.springframework.data.domain.Page<BatchUploadResponseDto>> response =
+                controller.getAllBatches(pageable, validUserDetails);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(1, response.getBody().getTotalElements());
+        assertEquals("BATCH-002", response.getBody().getContent().get(0).getBatchCode());
+    }
 }
+

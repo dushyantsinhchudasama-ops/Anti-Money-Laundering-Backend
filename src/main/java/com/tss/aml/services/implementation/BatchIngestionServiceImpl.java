@@ -20,6 +20,8 @@ import com.tss.aml.services.BatchValidationService;
 import com.tss.aml.services.interfaces.BatchIngestionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -107,15 +109,7 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
                 auditLogRepository.save(auditLog);
             }
 
-            return BatchUploadResponseDto.builder()
-                    .batchId(savedRejected.getBatchId())
-                    .batchCode(savedRejected.getBatchCode())
-                    .status(BatchStatus.REJECTED)
-                    .totalRecords(validationResult.getParsedData().size())
-                    .alertsGeneratedCount(0)
-                    .uploadedAt(savedRejected.getUploadedAt())
-                    .errors(validationResult.getErrors())
-                    .build();
+            return mapToBatchUploadResponseDto(savedRejected);
         }
 
         List<ParsedTransactionRowDto> parsedRows = validationResult.getParsedData();
@@ -196,15 +190,7 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
             auditLogRepository.save(auditLog);
         }
 
-        return BatchUploadResponseDto.builder()
-                .batchId(updatedBatch.getBatchId())
-                .batchCode(updatedBatch.getBatchCode())
-                .status(finalStatus)
-                .totalRecords(parsedRows.size())
-                .alertsGeneratedCount(alertsCount)
-                .uploadedAt(updatedBatch.getUploadedAt())
-                .errors(Collections.emptyList())
-                .build();
+        return mapToBatchUploadResponseDto(updatedBatch);
     }
 
     @Transactional(readOnly = true)
@@ -220,6 +206,21 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
             }
         }
 
+        return mapToBatchUploadResponseDto(batch);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Page<BatchUploadResponseDto> getAllBatchesForTenant(Pageable pageable, CustomUserDetails currentUser) {
+        if (currentUser == null || currentUser.getTenantId() == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not belong to an active bank tenant");
+        }
+
+        Page<TransactionBatch> batchPage = batchRepository.findByUploadedBy_Tenant_TenantId(currentUser.getTenantId(), pageable);
+        return batchPage.map(this::mapToBatchUploadResponseDto);
+    }
+
+    private BatchUploadResponseDto mapToBatchUploadResponseDto(TransactionBatch batch) {
         List<BatchValidationErrorDto> errorDtos = Collections.emptyList();
 
         if (batch.getStatus() == BatchStatus.REJECTED && batch.getValidationErrors() != null) {
@@ -232,6 +233,11 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
                     .toList();
         }
 
+        String uploadedByEmail = batch.getUploadedBy() != null ? batch.getUploadedBy().getEmail() : null;
+        String uploadedByName = batch.getUploadedBy() != null
+                ? (batch.getUploadedBy().getFirstName() + " " + batch.getUploadedBy().getLastName()).trim()
+                : null;
+
         return BatchUploadResponseDto.builder()
                 .batchId(batch.getBatchId())
                 .batchCode(batch.getBatchCode())
@@ -239,6 +245,9 @@ public class BatchIngestionServiceImpl implements BatchIngestionService {
                 .totalRecords(batch.getTotalRecords())
                 .alertsGeneratedCount(batch.getAlertsGeneratedCount())
                 .uploadedAt(batch.getUploadedAt())
+                .processedAt(batch.getProcessedAt())
+                .uploadedByEmail(uploadedByEmail)
+                .uploadedByName(uploadedByName)
                 .errors(errorDtos)
                 .build();
     }

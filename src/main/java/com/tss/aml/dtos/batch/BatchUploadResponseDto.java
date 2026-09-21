@@ -21,5 +21,9 @@ public class BatchUploadResponseDto {
     private Integer totalRecords;
     private Integer alertsGeneratedCount;
     private LocalDateTime uploadedAt;
+    private LocalDateTime processedAt;
+    private String uploadedByEmail;
+    private String uploadedByName;
     private List<BatchValidationErrorDto> errors;
 }
+

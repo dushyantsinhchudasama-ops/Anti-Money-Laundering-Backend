@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -94,7 +96,7 @@ public class JwtTokenProvider {
                 return UUID.fromString(id);
     }
 
-        public String getUsername(String token) {
+    public String getUsername(String token) {
                 return getClaims(token).getSubject();
         }
 
@@ -108,6 +110,23 @@ public class JwtTokenProvider {
 
         String tenantIdStr = getClaims(token).get("tenantId", String.class);
         return tenantIdStr != null ? UUID.fromString(tenantIdStr) : null;
+    }
+
+    //for storing jti and expire at time for logout
+    public String getJei(String token)
+    {
+        return getClaims(token).getId();
+    }
+
+    //to store expire time in table for expiration
+    public LocalDateTime getExpiration(String token)
+    {
+        Date expiration = getClaims(token).getExpiration();
+
+        return expiration
+                .toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
     }
 
 

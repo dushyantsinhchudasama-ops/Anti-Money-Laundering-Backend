@@ -8,10 +8,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * A single investigation note (SRS 3.3.4). Append-only — once submitted, a note
- * cannot be edited or deleted by any user, including admins.
- */
+
 @Getter
 @Setter
 @Entity

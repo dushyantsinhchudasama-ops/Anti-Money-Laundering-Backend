@@ -1,7 +1,7 @@
 package com.tss.aml.enums;
 
 /**
- * Mirrors the notification matrix in SRS section 4.1.
+ * Mirrors the notification matrixes
  */
 public enum NotificationEventType {
     CASE_ASSIGNED,

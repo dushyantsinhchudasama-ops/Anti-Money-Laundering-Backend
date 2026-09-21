@@ -6,11 +6,6 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Platform-wide immutable audit trail (SRS 4.3). Covers every action taken at the
- * AML System Admin layer: rule changes, bank onboarding/deactivation, admin logins.
- * No user, including the AML System Admin, can modify or delete entries.
- */
 @Getter
 @Setter
 @Entity

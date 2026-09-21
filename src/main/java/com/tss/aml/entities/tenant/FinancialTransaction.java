@@ -11,9 +11,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * A single ingested transaction. Read-only for all actors once ingested (SRS 4.4).
- */
 @Data
 @Entity
 @Table(name = "financial_transaction")

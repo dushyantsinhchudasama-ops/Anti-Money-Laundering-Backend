@@ -49,7 +49,7 @@ public class Account extends BaseEntity {
     @Column(name = "country_code", nullable = false, length = 2)
     private String countryCode;
 
-    // Customer Risk Rating (SRS 3.3.3)
+    // Customer Risk Rating
     @Enumerated(EnumType.STRING)
     @Column(name = "risk_rating", length = 50)
     private RiskRating riskRating;

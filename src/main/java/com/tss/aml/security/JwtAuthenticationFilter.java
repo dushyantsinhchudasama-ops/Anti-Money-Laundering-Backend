@@ -2,6 +2,7 @@ package com.tss.aml.security;
 
 import com.tss.aml.entities.system.Tenant;
 import com.tss.aml.enums.TenantStatus;
+import com.tss.aml.services.interfaces.LogoutService;
 import com.tss.aml.tenant.TenantContext;
 import com.tss.aml.tenant.TenantService;
 import jakarta.servlet.FilterChain;
@@ -27,6 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
     private final TenantService tenantService;
+    private final LogoutService logoutService;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -45,7 +47,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             String token = resolveToken(request);
 
+
             if (token != null && jwtTokenProvider.validateToken(token)) {
+
+                if (checkJTIValidity(token)) {
+                    log.warn("Revoked JWT token attempt detected");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Token has been logged out or revoked.\"}");
+                    return;
+                }
 
                 UUID tenantId = jwtTokenProvider.getTenantId(token);
 
@@ -122,10 +133,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String bearerToken = request.getHeader("Authorization");
 
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-
             return bearerToken.substring(7);
         }
 
+
         return null;
+    }
+
+    private boolean checkJTIValidity(String jwt)
+    {
+        String jti = jwtTokenProvider.getClaims(jwt).getId();
+        return logoutService.isRevoked(jti);
     }
 }

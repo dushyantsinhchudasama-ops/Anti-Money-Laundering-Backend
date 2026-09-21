@@ -9,10 +9,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * A single Excel transaction batch upload (SRS 3.2.3). A batch is fully accepted
- * or fully rejected — never partially processed.
- */
+
 @Getter
 @Setter
 @Entity

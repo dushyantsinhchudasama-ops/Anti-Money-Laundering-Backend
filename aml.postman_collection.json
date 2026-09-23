@@ -1,0 +1,595 @@
+{
+  "info": {
+    "_postman_id": "f1542085-5703-45ab-9384-1abec985a75f",
+    "name": "aml",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "48159482"
+  },
+  "item": [
+    {
+      "name": "auth",
+      "item": [
+        {
+          "name": "login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "// // system admin \r\n{\r\n    \"email\":\"admin@aml.com\",\r\n   \"password\":\"Admin@123\"\r\n}\r\n\r\n\r\n// // bank ad\r\n{\r\n    \"email\":\"kpansara790@rku.ac.in\",\r\n   \"password\":\"TmpAdmin@ce6afbf2\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8081/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "batch injestion",
+      "item": [
+        {
+          "name": "insert file",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "",
+                  "type": "file",
+                  "src": [
+                    "/C:/Users/Krish/Downloads/Hackathon_Portal_CIE1_Project_Report.pdf"
+                  ]
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/bank/batches/upload",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "v1",
+                "bank",
+                "batches",
+                "upload"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "system admin",
+      "item": [
+        {
+          "name": "tenant",
+          "item": [
+            {
+              "name": "create tenant",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"tenantCode\":\"\",\r\n    \"tenantName\":\"\",\r\n    \"displayName\":\"\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8081{{auth_secret_09g4}}",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081{{auth_secret_09g4}}"
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get all tenant",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{auth_secret_09g4}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8081{{auth_secret_09g4}}",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081{{auth_secret_09g4}}"
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "create bank admin",
+              "request": {
+                "auth": {
+                  "type": "bearer"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8081/api/v1/admin/1141eda1-9e1c-4fdc-9529-6423fc37d7b2/users",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081",
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "1141eda1-9e1c-4fdc-9529-6423fc37d7b2",
+                    "users"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "assign rules to tenant",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8081/api/v1/syatem/admin/rules/{ruleId}/assign",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081",
+                  "path": [
+                    "api",
+                    "v1",
+                    "syatem",
+                    "admin",
+                    "rules",
+                    "{ruleId}",
+                    "assign"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get assigned rules of the tenant",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8081/api/v1/system/admin/rules/tenants/1141eda1-9e1c-4fdc-9529-6423fc37d7b2",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081",
+                  "path": [
+                    "api",
+                    "v1",
+                    "system",
+                    "admin",
+                    "rules",
+                    "tenants",
+                    "1141eda1-9e1c-4fdc-9529-6423fc37d7b2"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "unassign rule",
+              "request": {
+                "auth": {
+                  "type": "bearer"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8081/api/v1/system/admin/rules/4d4d788b-5941-45fd-9e8e-3aea8288d9f2/unassign/baf186e-7685-4d0d-8583-bf42766559fe",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081",
+                  "path": [
+                    "api",
+                    "v1",
+                    "system",
+                    "admin",
+                    "rules",
+                    "4d4d788b-5941-45fd-9e8e-3aea8288d9f2",
+                    "unassign",
+                    "baf186e-7685-4d0d-8583-bf42766559fe"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "rules",
+          "item": [
+            {
+              "name": "add rule",
+              "request": {
+                "auth": {
+                  "type": "basic"
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"ruleName\": \"Dormant Account Reactivation\",\r\n  \"description\": \"Detects significant transactions from accounts that have remained dormant for a configured period.\",\r\n  \"typology\": \"DORMANT_ACCOUNT\",\r\n  \"defaultSeverity\": \"HIGH\",\r\n  \"parameters\": {\r\n    \"dormantDays\": 180,\r\n    \"minAmountThreshold\": 100000\r\n  }\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8081/api/v1/system/admin/rules",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081",
+                  "path": [
+                    "api",
+                    "v1",
+                    "system",
+                    "admin",
+                    "rules"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "bank admin",
+      "item": [
+        {
+          "name": "alerts",
+          "item": [
+            {
+              "name": "all alerts",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": ""
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get alert by id",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{auth_secret_0r3t}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8081{{auth_secret_0eb2}}/alerts/{{auth_secret_0r3t}}",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081{{auth_secret_0eb2}}",
+                  "path": [
+                    "alerts",
+                    "{{auth_secret_0r3t}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get alert stats",
+              "request": {
+                "auth": {
+                  "type": "bearer"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8081{{auth_secret_0eb2}}/alerts/status",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081{{auth_secret_0eb2}}",
+                  "path": [
+                    "alerts",
+                    "status"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "case",
+          "item": [
+            {
+              "name": "assign case to co",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8081{{auth_secret_0eb2}}/cases/assign",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081{{auth_secret_0eb2}}",
+                  "path": [
+                    "cases",
+                    "assign"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get cases of the co",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8081{{auth_secret_0eb2}}/cases",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081{{auth_secret_0eb2}}",
+                  "path": [
+                    "cases"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get case by id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8081{{auth_secret_0eb2}}/cases/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081{{auth_secret_0eb2}}",
+                  "path": [
+                    "cases",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "co",
+          "item": [
+            {
+              "name": "create co",
+              "request": {
+                "auth": {
+                  "type": "bearer"
+                },
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8081{{auth_secret_0eb2}}/add-compliance-officer",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081{{auth_secret_0eb2}}",
+                  "path": [
+                    "add-compliance-officer"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get all co of tenant",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{auth_secret_0eb2}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8081{{auth_secret_0eb2}}/compliance-officers",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081{{auth_secret_0eb2}}",
+                  "path": [
+                    "compliance-officers"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "co by id",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{auth_secret_01xe}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8081{{auth_secret_0eb2}}/get-officer/12ebc37d-c7f8-4ad3-852c-64585cdf118f",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081{{auth_secret_0eb2}}",
+                  "path": [
+                    "get-officer",
+                    "12ebc37d-c7f8-4ad3-852c-64585cdf118f"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "workload",
+              "request": {
+                "auth": {
+                  "type": "bearer"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8081{{auth_secret_0eb2}}/compliance-officers/workload",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081{{auth_secret_0eb2}}",
+                  "path": [
+                    "compliance-officers",
+                    "workload"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "deactivate Compliance Officer",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{supabase_service_role_api_key_09d8}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8081{{auth_secret_0eb2}}/compliance-officers/12ebc37d-c7f8-4ad3-852c-64585cdf118f/deactivate",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8081{{auth_secret_0eb2}}",
+                  "path": [
+                    "compliance-officers",
+                    "12ebc37d-c7f8-4ad3-852c-64585cdf118f",
+                    "deactivate"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "supabase_service_role_api_key_09d8",
+      "type": "string",
+      "secret": true
+    },
+    {
+      "key": "auth_secret_01xe",
+      "type": "string",
+      "secret": true
+    },
+    {
+      "key": "auth_secret_0eb2",
+      "type": "string",
+      "secret": true
+    },
+    {
+      "key": "auth_secret_0r3t",
+      "type": "string",
+      "secret": true
+    },
+    {
+      "key": "auth_secret_09g4",
+      "type": "string",
+      "secret": true
+    }
+  ]
+}

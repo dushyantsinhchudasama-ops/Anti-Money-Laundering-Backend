@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -141,9 +144,9 @@ public class EmailServiceImpl implements EmailService {
             context.setVariable("referenceNumber", referenceNumber);
             context.setVariable("caseCode", caseCode);
             context.setVariable("officerName", officerName != null ? officerName : "Compliance Officer");
-            context.setVariable("loginUrl", loginUrl);
+            context.setVariable("submittedAt", LocalDateTime.now());
 
-            String htmlContent = templateEngine.process("email/tenant-welcome", context);
+            String htmlContent = templateEngine.process("email/str-report-template", context);
 
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");

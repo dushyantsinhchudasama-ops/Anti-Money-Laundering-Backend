@@ -15,6 +15,7 @@ import com.tss.aml.repositories.TenantRepository;
 import com.tss.aml.repositories.UserRepository;
 import com.tss.aml.security.CustomUserDetails;
 import com.tss.aml.services.TenantMigrationService;
+import com.tss.aml.enums.UserRole;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -183,6 +184,77 @@ public class TenantService {
         return tenant.getSchemaName();
     }
 
+    public List<CreateBankAdminResponse> getBankAdminsForTenant(UUID tenantId) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + tenantId));
+
+        return userRepository.findAllByTenant_TenantIdAndRole(tenantId, UserRole.BANK_ADMIN, org.springframework.data.domain.Pageable.unpaged())
+                .stream()
+                .map(user -> CreateBankAdminResponse.builder()
+                        .userId(user.getUserId())
+                        .userCode(user.getUserCode())
+                        .tenantId(tenant.getTenantId())
+                        .employeeId(user.getEmployeeId())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .email(user.getEmail())
+                        .phoneNumber(user.getPhoneNumber())
+                        .role(user.getRole())
+                        .isActive(user.getIsActive())
+                        .mustResetPassword(user.getMustResetPassword())
+                        .createdAt(user.getCreatedAt())
+                        .build())
+                .toList();
+    }
+
+    public CreateBankAdminResponse activateBankAdmin(UUID tenantId, UUID userId) {
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Bank admin not found: " + userId));
+
+        if (!tenantId.equals(user.getTenant() != null ? user.getTenant().getTenantId() : null)) {
+            throw new IllegalArgumentException("Bank admin does not belong to tenant: " + tenantId);
+        }
+
+        user.setIsActive(true);
+        user = userRepository.save(user);
+        return mapBankAdminToResponse(user);
+    }
+
+    public CreateBankAdminResponse deactivateBankAdmin(UUID tenantId, UUID userId) {
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Bank admin not found: " + userId));
+
+        if (!tenantId.equals(user.getTenant() != null ? user.getTenant().getTenantId() : null)) {
+            throw new IllegalArgumentException("Bank admin does not belong to tenant: " + tenantId);
+        }
+
+        user.setIsActive(false);
+        user = userRepository.save(user);
+        return mapBankAdminToResponse(user);
+    }
+
+    public CreateBankAdminResponse resetBankAdminPassword(UUID tenantId, UUID userId) {
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Bank admin not found: " + userId));
+
+        if (!tenantId.equals(user.getTenant() != null ? user.getTenant().getTenantId() : null)) {
+            throw new IllegalArgumentException("Bank admin does not belong to tenant: " + tenantId);
+        }
+
+        String newTempPassword = generateTemporaryPassword();
+        user.setPasswordHash(passwordEncoder.encode(newTempPassword));
+        user.setMustResetPassword(true);
+        user.setFailedLoginCount(0);
+        user = userRepository.save(user);
+
+        emailService.sendPasswordResetEmail(
+                user.getEmail(),
+                user.getFirstName(),
+                newTempPassword);
+
+        return mapBankAdminToResponse(user);
+    }
+
     public CreateBankAdminResponse createBankAdmin(UUID tenantId, CreateBankAdminRequest request) {
         SystemAdmin admin = getCurrentAuthenticatedSystemAdmin();
 
@@ -232,10 +304,14 @@ public class TenantService {
                 tenant.getTenantCode(),
                 temporaryPassword);
 
+        return mapBankAdminToResponse(user);
+    }
+
+    private CreateBankAdminResponse mapBankAdminToResponse(Users user) {
         return CreateBankAdminResponse.builder()
                 .userId(user.getUserId())
                 .userCode(user.getUserCode())
-                .tenantId(tenant.getTenantId())
+                .tenantId(user.getTenant() != null ? user.getTenant().getTenantId() : null)
                 .employeeId(user.getEmployeeId())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())

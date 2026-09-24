@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STR Submission Confirmation</title>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 0;
+            color: #334155;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                        0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .email-header {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            padding: 32px 24px;
+            text-align: center;
+        }
+
+        .email-header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .email-header p {
+            color: #c7d2fe;
+            margin: 8px 0 0;
+            font-size: 14px;
+        }
+
+        .email-body {
+            padding: 32px 24px;
+        }
+
+        .greeting {
+            font-size: 18px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 16px;
+        }
+
+        .message-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #475569;
+            margin-bottom: 24px;
+        }
+
+        .success-card {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-left: 4px solid #16a34a;
+            border-radius: 8px;
+            padding: 18px;
+            margin-bottom: 24px;
+        }
+
+        .success-title {
+            color: #166534;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .success-text {
+            color: #15803d;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .details-card {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #4f46e5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 28px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0f172a;
+            text-align: right;
+        }
+
+        .reference-badge {
+            font-family: 'Courier New', Courier, monospace;
+            color: #4338ca;
+            background-color: #e0e7ff;
+            padding: 5px 9px;
+            border-radius: 6px;
+        }
+
+        .cta-container {
+            text-align: center;
+            margin: 30px 0 24px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background-color: #4f46e5;
+            color: #ffffff !important;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 14px 28px;
+            border-radius: 8px;
+            text-decoration: none;
+        }
+
+        .security-notice {
+            background-color: #fffbeb;
+            border: 1px solid #fef3c7;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 13px;
+            color: #92400e;
+            line-height: 1.5;
+        }
+
+        .security-notice strong {
+            color: #78350f;
+        }
+
+        .email-footer {
+            background-color: #f8fafc;
+            padding: 20px 24px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="email-container">
+
+    <!-- Header -->
+    <div class="email-header">
+        <h1>AML Compliance System</h1>
+        <p>Suspicious Transaction Report</p>
+    </div>
+
+    <div class="email-body">
+
+        <!-- Greeting -->
+        <div class="greeting"
+             th:text="'Hello ' + ${adminFirstName} + ','">
+            Hello Compliance Officer,
+        </div>
+
+        <!-- Message -->
+        <p class="message-text">
+            Your Suspicious Transaction Report (STR) has been
+            successfully submitted to the AML Compliance System.
+        </p>
+
+        <!-- Success -->
+        <div class="success-card">
+            <div class="success-title">
+                STR Successfully Submitted
+            </div>
+
+            <div class="success-text">
+                The report has been recorded successfully.
+            </div>
+        </div>
+
+        <!-- Essential Details -->
+        <div class="details-card">
+
+            <div class="detail-row">
+            <span class="detail-label">
+                Reference Number
+            </span>
+
+                <span class="detail-value">
+                <span class="reference-badge"
+                      th:text="${referenceNumber}">
+                    STR-2026-000001
+                </span>
+            </span>
+            </div>
+
+            <div class="detail-row">
+            <span class="detail-label">
+                Case Code
+            </span>
+
+                <span class="detail-value"
+                      th:text="${caseCode}">
+                AML-CASE-0001
+            </span>
+            </div>
+
+            <div class="detail-row">
+            <span class="detail-label">
+                Submitted At
+            </span>
+
+                <span class="detail-value"
+                      th:text="${submittedAt}">
+                22 Sep 2026, 15:00
+            </span>
+            </div>
+
+        </div>
+
+        <!-- CTA -->
+<!--        <div class="cta-container">-->
+<!--            <a th:href="${caseUrl}"-->
+<!--               class="cta-button">-->
+<!--                View AML Case-->
+<!--            </a>-->
+<!--        </div>-->
+
+        <!-- Notice -->
+        <div class="security-notice">
+            <strong>Important Notice:</strong>
+            This is an automated notification. Please do not reply to this email.
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="email-footer">
+        &copy; AML Compliance System &bull;
+        This is an automated message, please do not reply.
+    </div>
+
+</div>
+
+</body>
+</html>

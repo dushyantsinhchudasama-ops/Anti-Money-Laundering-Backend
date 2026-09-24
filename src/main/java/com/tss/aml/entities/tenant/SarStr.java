@@ -9,6 +9,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -54,7 +56,7 @@ public class SarStr extends BaseEntity {
     @Column(name = "pdf_reference")
     private String pdfReference;
 
-    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.BINARY)
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "pdf_content", columnDefinition = "BYTEA")
     private byte[] pdfContent;
 

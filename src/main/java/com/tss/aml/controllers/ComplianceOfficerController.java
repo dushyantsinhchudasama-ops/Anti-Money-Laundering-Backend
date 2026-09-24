@@ -1,9 +1,6 @@
 package com.tss.aml.controllers;
 
-import com.tss.aml.dtos.tenant.AlertDetailResponse;
-import com.tss.aml.dtos.tenant.AlertResponse;
-import com.tss.aml.dtos.tenant.CaseResponse;
-import com.tss.aml.dtos.tenant.ComplianceOfficerDashboardResponse;
+import com.tss.aml.dtos.tenant.*;
 import com.tss.aml.enums.AlertSeverity;
 import com.tss.aml.enums.AlertStatus;
 import com.tss.aml.enums.CaseStatus;
@@ -17,8 +14,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import com.tss.aml.dtos.tenant.CaseNoteCreateRequest;
-import com.tss.aml.dtos.tenant.CaseNoteResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +24,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import com.tss.aml.dtos.tenant.CloseCaseNoActionRequest;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -151,11 +145,11 @@ public class ComplianceOfficerController {
     }
 
     @GetMapping("/cases/{caseId}/sar-str/preview")
-    public ResponseEntity<com.tss.aml.dtos.tenant.SarStrPreviewResponse> getSarStrPreview(
+    public ResponseEntity<SarStrPreviewResponse> getSarStrPreview(
             @PathVariable String caseId,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         UUID caseUuid = parseUuid(caseId);
-        com.tss.aml.dtos.tenant.SarStrPreviewResponse response = complianceOfficerService.getSarStrPreview(caseUuid,
+        SarStrPreviewResponse response = complianceOfficerService.getSarStrPreview(caseUuid,
                 currentUser);
         return ResponseEntity.ok(response);
     }
@@ -163,7 +157,7 @@ public class ComplianceOfficerController {
     @PostMapping("/cases/{caseId}/sar-str")
     public ResponseEntity<com.tss.aml.dtos.tenant.SarStrResponse> fileSarStr(
             @PathVariable String caseId,
-            @Valid @RequestBody com.tss.aml.dtos.tenant.SarStrFilingRequest request,
+            @Valid @RequestBody SarStrFilingRequest request,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         UUID caseUuid = parseUuid(caseId);
         com.tss.aml.dtos.tenant.SarStrResponse response = complianceOfficerService.fileSarStr(caseUuid, request,

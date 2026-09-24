@@ -732,7 +732,7 @@ public class ComplianceOfficerServiceImpl implements ComplianceOfficerService {
         if (rulesSummary.isEmpty()) {
             rulesSummary = "Observed transaction patterns violating regulatory threshold and rule engine policies.";
         }
-        String narrative = "Suspicious activity detected on account " + primaryAccNo + " (" + primaryAccHolder + ") triggering " + alertCount + " alert(s) totaling $" + totalAlertAmt + " at " + bank + ".";
+        String narrative = "Suspicious activity detected on account " + primaryAccNo + " (" + primaryAccHolder + ") triggering " + alertCount + " alert(s) totaling ₹" + totalAlertAmt;
 
         List<String> reportTypes = List.of(SarStrType.SAR.name(), SarStrType.STR.name());
         List<String> typologies = List.of(
